@@ -2,23 +2,51 @@ import { useState } from 'react'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import './Contact.css'
 
-const email = 'iantirop33@gmail.com'
-
 const social = [
   { href: 'https://github.com/', icon: 'github-icon', label: 'GitHub' },
   { href: 'https://x.com/', icon: 'x-icon', label: 'X.com' },
   { href: 'https://bsky.app/', icon: 'bluesky-icon', label: 'Bluesky' },
 ]
 
+const contactMethods = [
+  {
+    id: 'personal-email',
+    icon: 'mail-icon',
+    label: 'Personal email',
+    value: 'iantirop33@gmail.com',
+    href: 'mailto:iantirop33@gmail.com',
+    copyValue: 'iantirop33@gmail.com',
+    actionLabel: 'Send an email',
+  },
+  {
+    id: 'work-email',
+    icon: 'mail-icon',
+    label: 'Work email',
+    value: 'ian.tirop@chainquest.co.ke',
+    href: 'mailto:ian.tirop@chainquest.co.ke',
+    copyValue: 'ian.tirop@chainquest.co.ke',
+    actionLabel: 'Send an email',
+  },
+  {
+    id: 'phone',
+    icon: 'phone-icon',
+    label: 'Phone',
+    value: '+254 757 970917',
+    href: 'tel:+254757970917',
+    copyValue: '+254757970917',
+    actionLabel: 'Call',
+  },
+]
+
 export function Contact() {
   useDocumentTitle('Contact — Ian Tirop')
-  const [copied, setCopied] = useState(false)
+  const [copiedId, setCopiedId] = useState(null)
 
-  const handleCopy = async () => {
+  const handleCopy = async (method) => {
     try {
-      await navigator.clipboard.writeText(email)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 1800)
+      await navigator.clipboard.writeText(method.copyValue)
+      setCopiedId(method.id)
+      setTimeout(() => setCopiedId((current) => (current === method.id ? null : current)), 1800)
     } catch {
       // Clipboard access can be denied or unavailable (e.g. insecure context) — fail silently.
     }
@@ -31,23 +59,32 @@ export function Contact() {
         <h1>Let&apos;s talk</h1>
         <p className="contact-intro">
           Questions, corrections on a post, or just want to say hi about
-          something I wrote — my inbox is open.
+          something I wrote — my inbox (or line) is open.
         </p>
       </div>
 
-      <div className="contact-card">
-        <svg className="icon mail" role="presentation" aria-hidden="true">
-          <use href="/icons.svg#mail-icon"></use>
-        </svg>
-        <p className="contact-email">{email}</p>
-        <div className="contact-actions">
-          <a className="btn btn-primary" href={`mailto:${email}`}>
-            Send an email
-          </a>
-          <button type="button" className="btn btn-ghost" onClick={handleCopy}>
-            {copied ? 'Copied!' : 'Copy address'}
-          </button>
-        </div>
+      <div className="contact-methods">
+        {contactMethods.map((method) => (
+          <div className="contact-card" key={method.id}>
+            <svg className="icon" role="presentation" aria-hidden="true">
+              <use href={`/icons.svg#${method.icon}`}></use>
+            </svg>
+            <p className="contact-label">{method.label}</p>
+            <p className="contact-value">{method.value}</p>
+            <div className="contact-actions">
+              <a className="btn btn-primary" href={method.href}>
+                {method.actionLabel}
+              </a>
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={() => handleCopy(method)}
+              >
+                {copiedId === method.id ? 'Copied!' : 'Copy'}
+              </button>
+            </div>
+          </div>
+        ))}
       </div>
 
       <div className="contact-social">
