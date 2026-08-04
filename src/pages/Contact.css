@@ -1,0 +1,95 @@
+.contact-page.container {
+  padding: 56px 24px 80px;
+  max-width: 640px;
+  text-align: center;
+}
+
+.contact-intro {
+  margin-top: 10px;
+  font-size: 16px;
+  color: var(--text);
+}
+
+.contact-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 40px 32px;
+  margin-top: 40px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--code-bg);
+  box-shadow: var(--shadow);
+}
+
+.contact-card .icon.mail {
+  width: 32px;
+  height: 32px;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+
+.contact-email {
+  font-family: var(--mono);
+  font-size: 18px;
+  color: var(--text-h);
+  font-weight: 600;
+}
+
+.contact-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.contact-social {
+  margin-top: 48px;
+
+  p {
+    font-size: 14px;
+    color: var(--text);
+    margin-bottom: 14px;
+  }
+
+  ul {
+    list-style: none;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    padding: 0;
+    margin: 0;
+  }
+
+  a {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 16px;
+    border-radius: 999px;
+    background: var(--social-bg);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-h);
+    transition: box-shadow 0.3s var(--ease), transform 0.3s var(--ease);
+
+    &:hover {
+      box-shadow: var(--shadow-lift);
+      transform: translateY(-2px);
+    }
+  }
+
+  .icon {
+    width: 16px;
+    height: 16px;
+  }
+
+  .invertable {
+    :root[data-theme='dark'] & {
+      filter: invert(1) brightness(2);
+    }
+  }
+}

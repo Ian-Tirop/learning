@@ -1,0 +1,164 @@
+.hero.container {
+  padding: 72px 24px 40px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  @media (max-width: 720px) {
+    padding: 48px 20px 28px;
+  }
+}
+
+.tagline {
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  color: var(--text-h);
+  margin-bottom: 18px;
+
+  .wave {
+    display: inline-block;
+    transform-origin: 70% 70%;
+
+    @media (prefers-reduced-motion: no-preference) {
+      animation: wave 2.2s ease-in-out infinite;
+    }
+  }
+}
+
+@keyframes wave {
+  0%,
+  60%,
+  100% {
+    transform: rotate(0deg);
+  }
+  10% {
+    transform: rotate(14deg);
+  }
+  20% {
+    transform: rotate(-8deg);
+  }
+  30% {
+    transform: rotate(14deg);
+  }
+  40% {
+    transform: rotate(-4deg);
+  }
+  50% {
+    transform: rotate(10deg);
+  }
+}
+
+.hero h1 {
+  max-width: 780px;
+}
+
+.hero-sub {
+  max-width: 560px;
+  margin: 20px 0 0;
+  font-size: 18px;
+  line-height: 1.6;
+  color: var(--text);
+
+  @media (max-width: 720px) {
+    font-size: 16px;
+  }
+}
+
+.hero-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 32px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.topics-row.container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  padding-bottom: 56px;
+}
+
+.latest-section.container {
+  border-top: 1px solid var(--border);
+  padding: 48px 24px 72px;
+}
+
+.post-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.post-card.card {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.post-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px 24px 24px;
+  flex-grow: 1;
+}
+
+.post-date {
+  font-size: 13px;
+  color: var(--text);
+}
+
+.post-excerpt {
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--text);
+  flex-grow: 1;
+}
+
+.read-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent);
+
+  .icon {
+    width: 14px;
+    height: 14px;
+    transition: transform 0.4s var(--ease);
+  }
+}
+
+.post-card:hover .read-more .icon {
+  transform: translateX(3px);
+}
+
+.view-all {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 36px;
+  font-weight: 600;
+  font-size: 15px;
+  text-decoration: none;
+  color: var(--text-h);
+
+  .icon {
+    width: 15px;
+    height: 15px;
+  }
+
+  &:hover {
+    color: var(--accent);
+  }
+}

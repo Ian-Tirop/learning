@@ -1,0 +1,160 @@
+.post-page.container {
+  padding: 40px 24px 80px;
+  max-width: 760px;
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  text-decoration: none;
+  margin-bottom: 28px;
+  transition: color 0.2s var(--ease), gap 0.25s var(--ease);
+
+  .icon {
+    width: 14px;
+    height: 14px;
+    transform: rotate(180deg);
+    transition: transform 0.3s var(--ease);
+  }
+
+  &:hover {
+    color: var(--accent);
+    gap: 9px;
+
+    .icon {
+      transform: rotate(180deg) translateX(2px);
+    }
+  }
+}
+
+.post-page .post-cover {
+  margin-bottom: 32px;
+}
+
+.post-header {
+  text-align: left;
+  margin-bottom: 36px;
+}
+
+.post-header .post-row-tags {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.draft-tag {
+  color: var(--text-h);
+  background: var(--social-bg);
+  border-color: var(--border);
+}
+
+.post-header h1 {
+  font-size: 38px;
+  @media (max-width: 640px) {
+    font-size: 28px;
+  }
+}
+
+.post-meta {
+  margin-top: 14px;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.post-link-cta {
+  margin-top: 8px;
+
+  .icon {
+    width: 15px;
+    height: 15px;
+  }
+}
+
+.author-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 40px;
+  padding: 20px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+}
+
+.author-avatar {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: 14px;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+}
+
+.author-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.author-link {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+  transition: opacity 0.2s var(--ease);
+
+  &:hover {
+    text-decoration: underline;
+    opacity: 0.8;
+  }
+}
+
+.post-nav {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 56px;
+  padding-top: 32px;
+  border-top: 1px solid var(--border);
+
+  @media (max-width: 640px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.post-nav-link {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  &.next {
+    grid-column: 2;
+    text-align: right;
+    align-items: flex-end;
+
+    @media (max-width: 640px) {
+      grid-column: 1;
+      text-align: left;
+      align-items: flex-start;
+    }
+  }
+}
+
+.post-nav-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.post-nav-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-h);
+}

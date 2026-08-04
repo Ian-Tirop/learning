@@ -1,0 +1,343 @@
+import { useState } from 'react'
+import { formatRelativeDate } from '../lib/formatRelativeDate'
+import './CommentSection.css'
+
+function ReplyForm({ onSubmit, onCancel }) {
+  const [name, setName] = useState('')
+  const [text, setText] = useState('')
+  const [error, setError] = useState('')
+
+  const handleSubmit = (event) => {
+    event.preventDefault()
+    const trimmedName = name.trim()
+    const trimmedText = text.trim()
+
+    if (!trimmedName || !trimmedText) {
+      setError('Add your name and a reply before posting.')
+      return
+    }
+
+    onSubmit(trimmedName, trimmedText)
+    setName('')
+    setText('')
+    setError('')
+  }
+
+  return (
+    <form className="reply-form" onSubmit={handleSubmit}>
+      <input
+        type="text"
+        placeholder="Your name"
+        value={name}
+        onChange={(event) => setName(event.target.value)}
+        aria-label="Your name"
+      />
+      <textarea
+        placeholder="Write a reply..."
+        value={text}
+        onChange={(event) => setText(event.target.value)}
+        aria-label="Your reply"
+        rows={2}
+      />
+      {error && <p className="comment-error">{error}</p>}
+      <div className="reply-form-actions">
+        <button type="submit" className="btn btn-primary">
+          Post reply
+        </button>
+        <button type="button" className="btn btn-ghost" onClick={onCancel}>
+          Cancel
+        </button>
+      </div>
+    </form>
+  )
+}
+
+function EditForm({ initialText, onSave, onCancel }) {
+  const [text, setText] = useState(initialText)
+  const [error, setError] = useState('')
+
+  const handleSubmit = (event) => {
+    event.preventDefault()
+    const trimmed = text.trim()
+    if (!trimmed) {
+      setError('A comment cannot be empty.')
+      return
+    }
+    onSave(trimmed)
+  }
+
+  return (
+    <form className="edit-form" onSubmit={handleSubmit}>
+      <textarea
+        value={text}
+        onChange={(event) => setText(event.target.value)}
+        aria-label="Edit your comment"
+        rows={3}
+        autoFocus
+      />
+      {error && <p className="comment-error">{error}</p>}
+      <div className="reply-form-actions">
+        <button type="submit" className="btn btn-primary">
+          Save
+        </button>
+        <button type="button" className="btn btn-ghost" onClick={onCancel}>
+          Cancel
+        </button>
+      </div>
+    </form>
+  )
+}
+
+function CommentReactions({ entry, onToggle }) {
+  return (
+    <div className="comment-reactions">
+      <button
+        type="button"
+        className={`comment-reaction-btn${entry.reaction === 'like' ? ' active' : ''}`}
+        onClick={() => onToggle('like')}
+        aria-pressed={entry.reaction === 'like'}
+        aria-label="Like this comment"
+      >
+        <svg className="icon" role="presentation" aria-hidden="true">
+          <use href="/icons.svg#thumb-up-icon"></use>
+        </svg>
+        {entry.likes}
+      </button>
+      <button
+        type="button"
+        className={`comment-reaction-btn dislike${entry.reaction === 'dislike' ? ' active' : ''}`}
+        onClick={() => onToggle('dislike')}
+        aria-pressed={entry.reaction === 'dislike'}
+        aria-label="Dislike this comment"
+      >
+        <svg className="icon" role="presentation" aria-hidden="true">
+          <use href="/icons.svg#thumb-down-icon"></use>
+        </svg>
+        {entry.dislikes}
+      </button>
+    </div>
+  )
+}
+
+function CommentEntry({
+  entry,
+  isReply,
+  isEditing,
+  onStartEdit,
+  onSaveEdit,
+  onCancelEdit,
+  isConfirmingDelete,
+  onDeleteClick,
+  onCancelDelete,
+  onConfirmDelete,
+  onToggleReaction,
+  isReplyOpen,
+  onToggleReply,
+  onCancelReply,
+  onSubmitReply,
+}) {
+  return (
+    <div className="comment">
+      <div className={`comment-avatar${isReply ? ' small' : ''}`} aria-hidden="true">
+        {entry.name.trim().charAt(0).toUpperCase()}
+      </div>
+      <div className="comment-body">
+        <div className="comment-meta">
+          <span className="comment-name">{entry.name}</span>
+          <span className="comment-date">
+            {formatRelativeDate(entry.date)}
+            {entry.editedAt ? ' · edited' : ''}
+          </span>
+        </div>
+
+        {entry.mentionOf && <span className="comment-mention">@{entry.mentionOf}</span>}
+
+        {isEditing ? (
+          <EditForm initialText={entry.text} onSave={onSaveEdit} onCancel={onCancelEdit} />
+        ) : (
+          <>
+            <p className="comment-text">{entry.text}</p>
+
+            <div className="comment-actions">
+              <CommentReactions entry={entry} onToggle={onToggleReaction} />
+              <button type="button" className="comment-action-btn" onClick={onToggleReply}>
+                Reply
+              </button>
+              {entry.isOwn && (
+                <>
+                  <button type="button" className="comment-action-btn" onClick={onStartEdit}>
+                    Edit
+                  </button>
+                  {isConfirmingDelete ? (
+                    <span className="delete-confirm">
+                      <button
+                        type="button"
+                        className="comment-action-btn danger"
+                        onClick={onConfirmDelete}
+                      >
+                        Confirm delete
+                      </button>
+                      <button type="button" className="comment-action-btn" onClick={onCancelDelete}>
+                        Cancel
+                      </button>
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      className="comment-action-btn danger"
+                      onClick={onDeleteClick}
+                    >
+                      Delete
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+          </>
+        )}
+
+        {isReplyOpen && <ReplyForm onSubmit={onSubmitReply} onCancel={onCancelReply} />}
+      </div>
+    </div>
+  )
+}
+
+export function CommentSection({
+  comments,
+  addComment,
+  editComment,
+  deleteComment,
+  addReply,
+  editReply,
+  deleteReply,
+  toggleReaction,
+}) {
+  const [name, setName] = useState('')
+  const [text, setText] = useState('')
+  const [error, setError] = useState('')
+  const [replyingTo, setReplyingTo] = useState(null)
+  const [editingId, setEditingId] = useState(null)
+  const [confirmingDeleteId, setConfirmingDeleteId] = useState(null)
+
+  const totalCount = comments.reduce((sum, comment) => sum + 1 + comment.replies.length, 0)
+
+  const handleSubmit = (event) => {
+    event.preventDefault()
+    const trimmedName = name.trim()
+    const trimmedText = text.trim()
+
+    if (!trimmedName || !trimmedText) {
+      setError('Add your name and a comment before posting.')
+      return
+    }
+
+    addComment(trimmedName, trimmedText)
+    setName('')
+    setText('')
+    setError('')
+  }
+
+  return (
+    <section className="comments">
+      <h2>
+        <svg className="icon" role="presentation" aria-hidden="true">
+          <use href="/icons.svg#comment-icon"></use>
+        </svg>
+        {totalCount} {totalCount === 1 ? 'Comment' : 'Comments'}
+      </h2>
+
+      <form className="comment-form" onSubmit={handleSubmit}>
+        <input
+          type="text"
+          placeholder="Your name"
+          value={name}
+          onChange={(event) => setName(event.target.value)}
+          aria-label="Your name"
+        />
+        <textarea
+          placeholder="Add to the discussion..."
+          value={text}
+          onChange={(event) => setText(event.target.value)}
+          aria-label="Your comment"
+          rows={3}
+        />
+        {error && <p className="comment-error">{error}</p>}
+        <button type="submit" className="btn btn-primary">
+          Post comment
+        </button>
+      </form>
+
+      <ul className="comment-list">
+        {comments.map((comment) => (
+          <li key={comment.id} className="comment-thread">
+            <CommentEntry
+              entry={comment}
+              isReply={false}
+              isEditing={editingId === comment.id}
+              onStartEdit={() => setEditingId(comment.id)}
+              onSaveEdit={(newText) => {
+                editComment(comment.id, newText)
+                setEditingId(null)
+              }}
+              onCancelEdit={() => setEditingId(null)}
+              isConfirmingDelete={confirmingDeleteId === comment.id}
+              onDeleteClick={() => setConfirmingDeleteId(comment.id)}
+              onCancelDelete={() => setConfirmingDeleteId(null)}
+              onConfirmDelete={() => {
+                deleteComment(comment.id)
+                setConfirmingDeleteId(null)
+              }}
+              onToggleReaction={(type) => toggleReaction(comment.id, type)}
+              isReplyOpen={replyingTo === comment.id}
+              onToggleReply={() =>
+                setReplyingTo((current) => (current === comment.id ? null : comment.id))
+              }
+              onCancelReply={() => setReplyingTo(null)}
+              onSubmitReply={(replyName, replyText) => {
+                addReply(comment.id, replyName, replyText)
+                setReplyingTo(null)
+              }}
+            />
+
+            {comment.replies.length > 0 && (
+              <ul className="reply-list">
+                {comment.replies.map((reply) => (
+                  <li key={reply.id}>
+                    <CommentEntry
+                      entry={reply}
+                      isReply
+                      isEditing={editingId === reply.id}
+                      onStartEdit={() => setEditingId(reply.id)}
+                      onSaveEdit={(newText) => {
+                        editReply(comment.id, reply.id, newText)
+                        setEditingId(null)
+                      }}
+                      onCancelEdit={() => setEditingId(null)}
+                      isConfirmingDelete={confirmingDeleteId === reply.id}
+                      onDeleteClick={() => setConfirmingDeleteId(reply.id)}
+                      onCancelDelete={() => setConfirmingDeleteId(null)}
+                      onConfirmDelete={() => {
+                        deleteReply(comment.id, reply.id)
+                        setConfirmingDeleteId(null)
+                      }}
+                      onToggleReaction={(type) => toggleReaction(reply.id, type)}
+                      isReplyOpen={replyingTo === reply.id}
+                      onToggleReply={() =>
+                        setReplyingTo((current) => (current === reply.id ? null : reply.id))
+                      }
+                      onCancelReply={() => setReplyingTo(null)}
+                      onSubmitReply={(replyName, replyText) => {
+                        addReply(comment.id, replyName, replyText, reply.name)
+                        setReplyingTo(null)
+                      }}
+                    />
+                  </li>
+                ))}
+              </ul>
+            )}
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}

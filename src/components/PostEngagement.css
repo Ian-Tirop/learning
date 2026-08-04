@@ -1,0 +1,145 @@
+.engagement {
+  margin-top: 48px;
+  padding: 24px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: var(--code-bg);
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.engagement-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.reactions {
+  display: flex;
+  gap: 8px;
+}
+
+.reaction-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-h);
+  cursor: pointer;
+  transition: border-color 0.2s var(--ease), color 0.2s var(--ease),
+    transform 0.3s var(--ease);
+
+  .icon {
+    width: 16px;
+    height: 16px;
+  }
+
+  &:hover {
+    border-color: var(--accent-border);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: scale(0.96);
+  }
+
+  &.active {
+    color: var(--accent);
+    background: var(--accent-bg);
+    border-color: var(--accent-border);
+  }
+
+  &.dislike.active {
+    color: var(--danger);
+    background: var(--danger-bg);
+    border-color: var(--danger-border);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+}
+
+.share-actions {
+  display: flex;
+  gap: 8px;
+
+  .btn {
+    padding: 8px 16px;
+    font-size: 14px;
+  }
+
+  .icon {
+    width: 15px;
+    height: 15px;
+  }
+}
+
+.rating-block {
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+}
+
+.stars {
+  display: flex;
+  gap: 4px;
+}
+
+.star {
+  padding: 2px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: var(--border);
+  transition: transform 0.3s var(--ease), color 0.2s var(--ease);
+
+  .icon {
+    width: 24px;
+    height: 24px;
+  }
+
+  &:hover {
+    transform: scale(1.2);
+  }
+
+  &.filled {
+    color: var(--accent-2);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+}
+
+.rating-summary {
+  font-size: 13px;
+  color: var(--text);
+}
+
+@media (max-width: 480px) {
+  .engagement-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .reactions,
+  .share-actions {
+    justify-content: center;
+  }
+}
