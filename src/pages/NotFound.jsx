@@ -1,9 +1,11 @@
 import { Link } from 'react-router-dom'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
+import { useMetaRobots } from '../hooks/useMetaRobots'
 import './NotFound.css'
 
 export function NotFound() {
   useDocumentTitle('Page not found — Ian Tirop')
+  useMetaRobots()
   return (
     <section className="container not-found">
       <p className="not-found-code gradient-text">404</p>

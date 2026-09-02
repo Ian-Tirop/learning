@@ -1,129 +1,140 @@
-import { useLocalStorage } from './useLocalStorage'
+import { useCallback, useEffect, useState } from 'react'
+import { api } from '../lib/apiClient'
+import { getVisitorId } from '../lib/visitorId'
 
-function makeId() {
-  if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID()
-  return `${Date.now()}-${Math.random().toString(16).slice(2)}`
+function decorate(comment, visitorId) {
+  const reactionSummary = Object.entries(comment.reactions || {})
+    .map(([emoji, visitorIds]) => ({ emoji, count: visitorIds.length, mine: visitorIds.includes(visitorId) }))
+    .filter((entry) => entry.count > 0)
+
+  return {
+    ...comment,
+    date: comment.createdAt,
+    isOwn: comment.visitorId === visitorId,
+    reactionSummary,
+  }
 }
 
-function today() {
-  return new Date().toISOString().slice(0, 10)
+function buildTree(comments, visitorId) {
+  const decorated = comments.map((comment) => decorate(comment, visitorId))
+  const roots = decorated.filter((comment) => !comment.parentId)
+  const repliesByParent = {}
+  for (const comment of decorated) {
+    if (!comment.parentId) continue
+    if (!repliesByParent[comment.parentId]) repliesByParent[comment.parentId] = []
+    repliesByParent[comment.parentId].push(comment)
+  }
+  return roots
+    .map((root) => ({ ...root, replies: repliesByParent[root.id] || [] }))
+    .sort((a, b) => new Date(b.date) - new Date(a.date))
 }
 
 export function usePostEngagement(post) {
-  const [reaction, setReaction] = useLocalStorage(`blog:reaction:${post.slug}`, null)
-  const [userRating, setUserRating] = useLocalStorage(`blog:rating:${post.slug}`, null)
-  const [userComments, setUserComments] = useLocalStorage(`blog:comments:${post.slug}`, [])
-  // Flat map keyed by comment or reply id — one visitor reaction per entry, whichever kind it is.
-  const [reactions, setReactions] = useLocalStorage(`blog:entryReactions:${post.slug}`, {})
-  // Replies are always stored under their top-level comment's id, even when replying to
-  // another reply (that reply's author name is kept as `mentionOf` instead of nesting deeper).
-  const [userReplies, setUserReplies] = useLocalStorage(`blog:replies:${post.slug}`, {})
+  const visitorId = getVisitorId()
+  const slug = post?.slug
+  const [myReaction, setMyReaction] = useState(null)
+  const [myRating, setMyRating] = useState(null)
+  const [rawComments, setRawComments] = useState([])
+  const [loading, setLoading] = useState(true)
 
-  const likes = post.seed.likes + (reaction === 'like' ? 1 : 0)
-  const dislikes = post.seed.dislikes + (reaction === 'dislike' ? 1 : 0)
+  const load = useCallback(async () => {
+    if (!slug) return
+    try {
+      const [reactionData, commentsData] = await Promise.all([
+        api.get(`/api/posts/${encodeURIComponent(slug)}/reaction?visitorId=${encodeURIComponent(visitorId)}`),
+        api.get(`/api/comments?slug=${encodeURIComponent(slug)}`),
+      ])
+      setMyReaction(reactionData.reaction)
+      setMyRating(reactionData.rating)
+      setRawComments(commentsData.comments)
+    } catch {
+      // Post not yet published/reachable, or the API isn't available — the
+      // page renders with zero engagement rather than crashing.
+    } finally {
+      setLoading(false)
+    }
+  }, [slug, visitorId])
 
-  const toggleLike = () => setReaction((r) => (r === 'like' ? null : 'like'))
-  const toggleDislike = () => setReaction((r) => (r === 'dislike' ? null : 'dislike'))
+  useEffect(() => {
+    load()
+  }, [load])
 
-  const ratingSum = post.seed.ratingSum + (userRating || 0)
-  const ratingCount = post.seed.ratingCount + (userRating ? 1 : 0)
+  const likes = (post?.seed?.likes || 0) + (myReaction === 'like' ? 1 : 0)
+  const dislikes = (post?.seed?.dislikes || 0) + (myReaction === 'dislike' ? 1 : 0)
+  const ratingSum = (post?.seed?.ratingSum || 0) + (myRating || 0)
+  const ratingCount = (post?.seed?.ratingCount || 0) + (myRating ? 1 : 0)
   const average = ratingCount > 0 ? ratingSum / ratingCount : 0
 
-  const rate = (value) => setUserRating((prev) => (prev === value ? null : value))
+  const postReaction = async (payload) => {
+    const data = await api.post(`/api/posts/${encodeURIComponent(slug)}/reaction`, { visitorId, ...payload })
+    setMyReaction(data.reaction)
+    setMyRating(data.rating)
+  }
 
-  const toggleReaction = (id, type) => {
-    setReactions((prev) => {
-      const next = { ...prev }
-      if (next[id] === type) {
-        delete next[id]
-      } else {
-        next[id] = type
-      }
-      return next
+  const toggleLike = () => postReaction({ reaction: myReaction === 'like' ? null : 'like' })
+  const toggleDislike = () => postReaction({ reaction: myReaction === 'dislike' ? null : 'dislike' })
+  const rate = (value) => postReaction({ rating: myRating === value ? null : value })
+
+  const addComment = async (name, text) => {
+    const data = await api.post('/api/comments', { postSlug: slug, name, text, visitorId })
+    setRawComments((prev) => [...prev, data.comment])
+  }
+
+  const editComment = async (id, text) => {
+    const data = await api.patch(`/api/comments/${id}`, { visitorId, text })
+    setRawComments((prev) => prev.map((comment) => (comment.id === id ? data.comment : comment)))
+  }
+
+  const deleteCommentById = async (id) => {
+    await api.delete(`/api/comments/${id}?visitorId=${encodeURIComponent(visitorId)}`)
+    setRawComments((prev) => prev.filter((comment) => comment.id !== id && comment.parentId !== id))
+  }
+
+  const addReply = async (topCommentId, name, text, mentionOf) => {
+    const data = await api.post('/api/comments', {
+      postSlug: slug,
+      parentId: topCommentId,
+      name,
+      text,
+      mentionOf: mentionOf || undefined,
+      visitorId,
     })
+    setRawComments((prev) => [...prev, data.comment])
   }
 
-  const addComment = (name, text) => {
-    setUserComments((prev) => [
-      { id: makeId(), name, text, date: today(), likes: 0, dislikes: 0 },
-      ...prev,
-    ])
-  }
-
-  const editComment = (id, text) => {
-    setUserComments((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, text, editedAt: today() } : c)),
+  const toggleReaction = async (commentId, emoji) => {
+    const data = await api.post(`/api/comments/${commentId}/reaction`, { visitorId, emoji })
+    setRawComments((prev) =>
+      prev.map((comment) => {
+        if (comment.id !== commentId) return comment
+        const reactions = { ...comment.reactions }
+        const ids = new Set(reactions[emoji] || [])
+        if (data.active) ids.add(visitorId)
+        else ids.delete(visitorId)
+        reactions[emoji] = [...ids]
+        return { ...comment, reactions }
+      }),
     )
   }
 
-  const deleteComment = (id) => {
-    setUserComments((prev) => prev.filter((c) => c.id !== id))
-  }
-
-  const addReply = (topCommentId, name, text, mentionOf) => {
-    setUserReplies((prev) => ({
-      ...prev,
-      [topCommentId]: [
-        ...(prev[topCommentId] || []),
-        { id: makeId(), name, text, date: today(), likes: 0, dislikes: 0, mentionOf },
-      ],
-    }))
-  }
-
-  const editReply = (topCommentId, replyId, text) => {
-    setUserReplies((prev) => ({
-      ...prev,
-      [topCommentId]: (prev[topCommentId] || []).map((r) =>
-        r.id === replyId ? { ...r, text, editedAt: today() } : r,
-      ),
-    }))
-  }
-
-  const deleteReply = (topCommentId, replyId) => {
-    setUserReplies((prev) => ({
-      ...prev,
-      [topCommentId]: (prev[topCommentId] || []).filter((r) => r.id !== replyId),
-    }))
-  }
-
-  const decorate = (entry, isOwn) => {
-    const entryReaction = reactions[entry.id] ?? null
-    return {
-      ...entry,
-      likes: (entry.likes || 0) + (entryReaction === 'like' ? 1 : 0),
-      dislikes: (entry.dislikes || 0) + (entryReaction === 'dislike' ? 1 : 0),
-      reaction: entryReaction,
-      isOwn,
-    }
-  }
-
-  const buildReplies = (comment) => [
-    ...(comment.replies || []).map((r) => decorate(r, false)),
-    ...(userReplies[comment.id] || []).map((r) => decorate(r, true)),
-  ]
-
-  const comments = [
-    ...userComments.map((c) => ({ ...decorate(c, true), replies: buildReplies(c) })),
-    ...[...post.seed.comments].reverse().map((c) => ({ ...decorate(c, false), replies: buildReplies(c) })),
-  ]
-
   return {
-    reaction,
+    reaction: myReaction,
     likes,
     dislikes,
     toggleLike,
     toggleDislike,
     average,
     ratingCount,
-    userRating,
+    userRating: myRating,
     rate,
-    comments,
+    comments: buildTree(rawComments, visitorId),
+    loading,
     addComment,
     editComment,
-    deleteComment,
+    deleteComment: deleteCommentById,
     addReply,
-    editReply,
-    deleteReply,
+    editReply: (topCommentId, replyId, text) => editComment(replyId, text),
+    deleteReply: (topCommentId, replyId) => deleteCommentById(replyId),
     toggleReaction,
   }
 }

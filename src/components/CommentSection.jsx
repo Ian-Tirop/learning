@@ -39,7 +39,11 @@ function ReplyForm({ onSubmit, onCancel }) {
         aria-label="Your reply"
         rows={2}
       />
-      {error && <p className="comment-error">{error}</p>}
+      {error && (
+        <p className="comment-error" role="alert">
+          {error}
+        </p>
+      )}
       <div className="reply-form-actions">
         <button type="submit" className="btn btn-primary">
           Post reply
@@ -75,7 +79,11 @@ function EditForm({ initialText, onSave, onCancel }) {
         rows={3}
         autoFocus
       />
-      {error && <p className="comment-error">{error}</p>}
+      {error && (
+        <p className="comment-error" role="alert">
+          {error}
+        </p>
+      )}
       <div className="reply-form-actions">
         <button type="submit" className="btn btn-primary">
           Save
@@ -88,33 +96,61 @@ function EditForm({ initialText, onSave, onCancel }) {
   )
 }
 
+const EMOJI_OPTIONS = ['👍', '❤️', '😂', '🎉', '😮', '👎']
+
 function CommentReactions({ entry, onToggle }) {
+  const [pickerOpen, setPickerOpen] = useState(false)
+  const summary = entry.reactionSummary || []
+
+  const handleBlur = (event) => {
+    if (!event.currentTarget.contains(event.relatedTarget)) setPickerOpen(false)
+  }
+
   return (
-    <div className="comment-reactions">
-      <button
-        type="button"
-        className={`comment-reaction-btn${entry.reaction === 'like' ? ' active' : ''}`}
-        onClick={() => onToggle('like')}
-        aria-pressed={entry.reaction === 'like'}
-        aria-label="Like this comment"
-      >
-        <svg className="icon" role="presentation" aria-hidden="true">
-          <use href="/icons.svg#thumb-up-icon"></use>
-        </svg>
-        {entry.likes}
-      </button>
-      <button
-        type="button"
-        className={`comment-reaction-btn dislike${entry.reaction === 'dislike' ? ' active' : ''}`}
-        onClick={() => onToggle('dislike')}
-        aria-pressed={entry.reaction === 'dislike'}
-        aria-label="Dislike this comment"
-      >
-        <svg className="icon" role="presentation" aria-hidden="true">
-          <use href="/icons.svg#thumb-down-icon"></use>
-        </svg>
-        {entry.dislikes}
-      </button>
+    <div className="comment-reactions" onBlur={handleBlur}>
+      {summary.map(({ emoji, count, mine }) => (
+        <button
+          key={emoji}
+          type="button"
+          className={`emoji-reaction-btn${mine ? ' active' : ''}`}
+          onClick={() => onToggle(emoji)}
+          aria-pressed={mine}
+          aria-label={`React with ${emoji} (${count})`}
+        >
+          <span aria-hidden="true">{emoji}</span>
+          {count}
+        </button>
+      ))}
+
+      <div className="emoji-picker-wrap">
+        <button
+          type="button"
+          className="emoji-add-btn"
+          onClick={() => setPickerOpen((open) => !open)}
+          aria-label="Add a reaction"
+          aria-expanded={pickerOpen}
+        >
+          <span aria-hidden="true">+</span>
+        </button>
+        {pickerOpen && (
+          <div className="emoji-picker" role="menu">
+            {EMOJI_OPTIONS.map((emoji) => (
+              <button
+                key={emoji}
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  onToggle(emoji)
+                  setPickerOpen(false)
+                }}
+                aria-label={`React with ${emoji}`}
+              >
+                {emoji}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
@@ -261,7 +297,11 @@ export function CommentSection({
           aria-label="Your comment"
           rows={3}
         />
-        {error && <p className="comment-error">{error}</p>}
+        {error && (
+          <p className="comment-error" role="alert">
+            {error}
+          </p>
+        )}
         <button type="submit" className="btn btn-primary">
           Post comment
         </button>

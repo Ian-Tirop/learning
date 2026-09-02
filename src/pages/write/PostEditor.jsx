@@ -1,13 +1,16 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
-import { createPost, getPostBySlug, slugExists, updatePost } from '../../data/postStore'
+import { createPost, getPostBySlug, updatePost } from '../../data/postStore'
 import { coverPresets, findMatchingPreset } from '../../data/coverPresets'
 import { PostCover } from '../../components/PostCover'
 import { ContentBlocks } from '../../components/ContentBlocks'
 import { parsePostBody, serializePostBody } from '../../lib/postBody'
 import { slugify } from '../../lib/slugify'
 import { estimateReadingTime } from '../../lib/estimateReadingTime'
+import { formatDate } from '../../lib/formatDate'
 import { useDocumentTitle } from '../../hooks/useDocumentTitle'
+import { useMetaRobots } from '../../hooks/useMetaRobots'
+import { useAdmin } from '../../context/AdminContext'
 import './Write.css'
 
 function today() {
@@ -16,31 +19,82 @@ function today() {
 
 export function PostEditor() {
   const { slug } = useParams()
+  const { isAdmin, loading: authLoading } = useAdmin()
+
+  if (!authLoading && !isAdmin) {
+    return <Navigate to="/admin/login" replace />
+  }
+  if (authLoading) return null
+
   return <PostEditorForm key={slug || 'new'} slug={slug} isNew={!slug} />
 }
 
 function PostEditorForm({ slug, isNew }) {
   const navigate = useNavigate()
-  const existing = isNew ? null : getPostBySlug(slug, { includeDrafts: true })
+  const [existing, setExisting] = useState(null)
+  const [loadingExisting, setLoadingExisting] = useState(!isNew)
+  const [loadError, setLoadError] = useState(false)
 
-  const [title, setTitle] = useState(existing?.title || '')
-  const [slugValue, setSlugValue] = useState(existing?.slug || '')
+  useEffect(() => {
+    if (isNew) return
+    let cancelled = false
+    getPostBySlug(slug)
+      .then((post) => {
+        if (!cancelled) setExisting(post)
+      })
+      .catch(() => {
+        if (!cancelled) setLoadError(true)
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingExisting(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [slug, isNew])
+
+  const [title, setTitle] = useState('')
+  const [slugValue, setSlugValue] = useState('')
   const [slugManuallyEdited, setSlugManuallyEdited] = useState(false)
-  const [tagsInput, setTagsInput] = useState(existing?.tags?.join(', ') || '')
-  const [excerpt, setExcerpt] = useState(existing?.excerpt || '')
-  const [date, setDate] = useState(existing?.date || today())
-  const [bodyText, setBodyText] = useState(existing ? serializePostBody(existing.content) : '')
-  const [readingTimeValue, setReadingTimeValue] = useState(String(existing?.readingTime || 1))
-  const [readingTimeTouched, setReadingTimeTouched] = useState(Boolean(existing))
-  const [cover, setCover] = useState(() => findMatchingPreset(existing?.cover))
-  const [linkLabel, setLinkLabel] = useState(existing?.link?.label || '')
-  const [linkHref, setLinkHref] = useState(existing?.link?.href || '')
+  const [tagsInput, setTagsInput] = useState('')
+  const [excerpt, setExcerpt] = useState('')
+  const [date, setDate] = useState(today())
+  const [bodyText, setBodyText] = useState('')
+  const [readingTimeValue, setReadingTimeValue] = useState('1')
+  const [readingTimeTouched, setReadingTimeTouched] = useState(false)
+  const [cover, setCover] = useState(coverPresets[0])
+  const [linkLabel, setLinkLabel] = useState('')
+  const [linkHref, setLinkHref] = useState('')
   const [mode, setMode] = useState('write')
   const [error, setError] = useState('')
+  const [saving, setSaving] = useState(false)
 
-  useDocumentTitle(isNew ? 'New post — Ian Tirop' : `Edit — Ian Tirop`)
+  useEffect(() => {
+    if (!existing) return
+    setTitle(existing.title)
+    setSlugValue(existing.slug)
+    setTagsInput(existing.tags.join(', '))
+    setExcerpt(existing.excerpt)
+    setDate(existing.date)
+    setBodyText(serializePostBody(existing.content))
+    setReadingTimeValue(String(existing.readingTime))
+    setReadingTimeTouched(true)
+    setCover(findMatchingPreset(existing.cover))
+    setLinkLabel(existing.link?.label || '')
+    setLinkHref(existing.link?.href || '')
+  }, [existing])
 
-  if (!isNew && !existing) {
+  useDocumentTitle(isNew ? 'New post — Ian Tirop' : 'Edit — Ian Tirop')
+  useMetaRobots()
+
+  if (!isNew && loadingExisting) {
+    return (
+      <section className="container write-page">
+        <p className="loading-note">Loading post…</p>
+      </section>
+    )
+  }
+  if (!isNew && (loadError || !existing)) {
     return <Navigate to="/write" replace />
   }
 
@@ -76,13 +130,11 @@ function PostEditorForm({ slug, isNew }) {
     readingTime: effectiveReadingTime,
     cover,
     content: parsedContent,
-    link: linkHref.trim()
-      ? { href: linkHref.trim(), label: linkLabel.trim() || 'Read more' }
-      : undefined,
+    link: linkHref.trim() ? { href: linkHref.trim(), label: linkLabel.trim() || 'Read more' } : null,
     status,
   })
 
-  const handleSave = (status) => {
+  const handleSave = async (status) => {
     if (!title.trim()) {
       setError('Give your post a title.')
       return
@@ -96,22 +148,26 @@ function PostEditorForm({ slug, isNew }) {
       return
     }
 
-    if (isNew) {
-      const finalSlug = slugValue.trim() || slugify(title)
-      if (!finalSlug) {
-        setError('Give your post a URL slug.')
-        return
-      }
-      if (slugExists(finalSlug)) {
-        setError(`The URL "/blog/${finalSlug}" is already taken — try a different slug.`)
-        return
-      }
-      createPost({ ...buildData(status), slug: finalSlug })
-    } else {
-      updatePost(existing.slug, buildData(status))
-    }
+    setSaving(true)
+    setError('')
 
-    navigate('/write')
+    try {
+      if (isNew) {
+        const finalSlug = slugValue.trim() || slugify(title)
+        if (!finalSlug) {
+          setError('Give your post a URL slug.')
+          setSaving(false)
+          return
+        }
+        await createPost({ ...buildData(status), slug: finalSlug })
+      } else {
+        await updatePost(existing.slug, buildData(status))
+      }
+      navigate('/write')
+    } catch (err) {
+      setError(err.message || 'Could not save that post right now.')
+      setSaving(false)
+    }
   }
 
   return (
@@ -274,11 +330,7 @@ function PostEditorForm({ slug, isNew }) {
               </div>
               <h1>{title || 'Untitled post'}</h1>
               <p className="post-meta">
-                {new Date(date).toLocaleDateString(undefined, {
-                  month: 'long',
-                  day: 'numeric',
-                  year: 'numeric',
-                })}
+                {formatDate(date, 'long')}
                 {' · '}
                 {effectiveReadingTime} min read
               </p>
@@ -318,11 +370,11 @@ function PostEditorForm({ slug, isNew }) {
         </label>
 
         <div className="write-form-actions">
-          <button type="button" className="btn btn-ghost" onClick={() => handleSave('draft')}>
+          <button type="button" className="btn btn-ghost" disabled={saving} onClick={() => handleSave('draft')}>
             Save draft
           </button>
-          <button type="button" className="btn btn-primary" onClick={() => handleSave('published')}>
-            Publish
+          <button type="button" className="btn btn-primary" disabled={saving} onClick={() => handleSave('published')}>
+            {saving ? 'Saving…' : 'Publish'}
           </button>
         </div>
       </div>

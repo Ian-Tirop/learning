@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
+import { useMetaDescription } from '../hooks/useMetaDescription'
+import { useCanonicalUrl } from '../hooks/useCanonicalUrl'
 import './About.css'
 
 const interests = [
@@ -28,6 +30,10 @@ const now = [
 
 export function About() {
   useDocumentTitle('About — Ian Tirop')
+  useMetaDescription(
+    "Ian Tirop is a developer and UI/UX designer writing about interface decisions, CSS, React, and the process of building and learning in public.",
+  )
+  useCanonicalUrl()
   return (
     <section className="container about-page">
       <div className="about-header">

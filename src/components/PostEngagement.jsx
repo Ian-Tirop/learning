@@ -61,7 +61,7 @@ export function PostEngagement({
         </div>
 
         <div className="share-actions">
-          <button type="button" className="btn btn-ghost" onClick={handleCopyLink}>
+          <button type="button" className="btn btn-ghost" onClick={handleCopyLink} aria-live="polite">
             <svg className="icon" role="presentation" aria-hidden="true">
               <use href="/icons.svg#link-icon"></use>
             </svg>

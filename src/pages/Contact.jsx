@@ -1,12 +1,10 @@
 import { useState } from 'react'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
+import { useMetaDescription } from '../hooks/useMetaDescription'
+import { useCanonicalUrl } from '../hooks/useCanonicalUrl'
+import { ReaderFeedback } from '../components/ReaderFeedback'
+import { social } from '../data/social'
 import './Contact.css'
-
-const social = [
-  { href: 'https://github.com/', icon: 'github-icon', label: 'GitHub' },
-  { href: 'https://x.com/', icon: 'x-icon', label: 'X.com' },
-  { href: 'https://bsky.app/', icon: 'bluesky-icon', label: 'Bluesky' },
-]
 
 const contactMethods = [
   {
@@ -40,6 +38,10 @@ const contactMethods = [
 
 export function Contact() {
   useDocumentTitle('Contact — Ian Tirop')
+  useMetaDescription(
+    "Get in touch with Ian Tirop — email, phone, or socials — or leave feedback on what to write about next.",
+  )
+  useCanonicalUrl()
   const [copiedId, setCopiedId] = useState(null)
 
   const handleCopy = async (method) => {
@@ -79,6 +81,7 @@ export function Contact() {
                 type="button"
                 className="btn btn-ghost"
                 onClick={() => handleCopy(method)}
+                aria-live="polite"
               >
                 {copiedId === method.id ? 'Copied!' : 'Copy'}
               </button>
@@ -102,6 +105,8 @@ export function Contact() {
           ))}
         </ul>
       </div>
+
+      <ReaderFeedback />
     </section>
   )
 }

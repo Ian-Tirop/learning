@@ -1,28 +1,62 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { getAllPosts } from '../data/postStore'
 import { PostCover } from '../components/PostCover'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
+import { useMetaDescription } from '../hooks/useMetaDescription'
+import { useCanonicalUrl } from '../hooks/useCanonicalUrl'
+import { formatDate } from '../lib/formatDate'
+import { searchPosts } from '../lib/searchPosts'
+import { isRecent } from '../lib/isRecent'
 import './Blog.css'
 
 export function Blog() {
   useDocumentTitle('Blog — Ian Tirop')
-  const [activeTag, setActiveTag] = useState(null)
-  const [query, setQuery] = useState('')
+  useCanonicalUrl()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const activeTag = searchParams.get('tag')
+  const [query, setQuery] = useState(() => searchParams.get('q') || '')
+  const [posts, setPosts] = useState([])
+  const [loading, setLoading] = useState(true)
 
-  const posts = getAllPosts({ includeDrafts: false })
+  useEffect(() => {
+    let cancelled = false
+    getAllPosts()
+      .then((fetched) => {
+        if (!cancelled) setPosts(fetched)
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const setActiveTag = (tag) => {
+    const next = new URLSearchParams(searchParams)
+    if (tag) next.set('tag', tag)
+    else next.delete('tag')
+    setSearchParams(next, { replace: true })
+  }
+
+  const handleQueryChange = (value) => {
+    setQuery(value)
+    const next = new URLSearchParams(searchParams)
+    if (value) next.set('q', value)
+    else next.delete('q')
+    setSearchParams(next, { replace: true })
+  }
+
+  useMetaDescription(
+    `${posts.length} posts about code, design, and the process of learning both in public.`,
+  )
   const tags = [...new Set(posts.flatMap((post) => post.tags))].sort()
 
+  const taggedPosts = activeTag ? posts.filter((post) => post.tags.includes(activeTag)) : posts
   const normalizedQuery = query.trim().toLowerCase()
-
-  const visiblePosts = posts.filter((post) => {
-    const matchesTag = !activeTag || post.tags.includes(activeTag)
-    const matchesQuery =
-      !normalizedQuery ||
-      post.title.toLowerCase().includes(normalizedQuery) ||
-      post.excerpt.toLowerCase().includes(normalizedQuery)
-    return matchesTag && matchesQuery
-  })
+  const visiblePosts = normalizedQuery ? searchPosts(taggedPosts, query) : taggedPosts
 
   return (
     <section className="container blog-page">
@@ -43,7 +77,7 @@ export function Blog() {
           type="search"
           placeholder="Search posts..."
           value={query}
-          onChange={(event) => setQuery(event.target.value)}
+          onChange={(event) => handleQueryChange(event.target.value)}
           aria-label="Search posts"
         />
       </div>
@@ -78,7 +112,12 @@ export function Blog() {
             >
               <PostCover cover={post.cover} size="thumb" />
               <div className="post-row-main">
-                <h2>{post.title}</h2>
+                <h2>
+                  {post.slug === posts[0]?.slug && isRecent(post.date) && (
+                    <span className="new-badge">New</span>
+                  )}
+                  {post.title}
+                </h2>
                 <p>{post.excerpt}</p>
                 <div className="post-row-tags">
                   {post.tags.map((tag) => (
@@ -89,13 +128,7 @@ export function Blog() {
                 </div>
               </div>
               <div className="post-row-meta">
-                <span>
-                  {new Date(post.date).toLocaleDateString(undefined, {
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric',
-                  })}
-                </span>
+                <span>{formatDate(post.date)}</span>
                 <span>{post.readingTime} min read</span>
               </div>
             </Link>
@@ -103,7 +136,9 @@ export function Blog() {
         ))}
       </ul>
 
-      {visiblePosts.length === 0 && (
+      {loading && <p className="loading-note">Loading posts…</p>}
+
+      {!loading && visiblePosts.length === 0 && (
         <p className="empty-state">
           {normalizedQuery
             ? `No posts match "${query}".`

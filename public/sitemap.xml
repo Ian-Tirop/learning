@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://example.com/</loc></url>
+  <url><loc>https://example.com/blog</loc></url>
+  <url><loc>https://example.com/about</loc></url>
+  <url><loc>https://example.com/contact</loc></url>
+  <url><loc>https://example.com/blog/why-i-cant-stop-recommending-chainquest-ke</loc></url>
+  <url><loc>https://example.com/blog/design-systems-are-a-product-not-a-deliverable</loc></url>
+  <url><loc>https://example.com/blog/the-line-height-bug-that-humbled-me</loc></url>
+  <url><loc>https://example.com/blog/dark-mode-is-not-a-color-swap</loc></url>
+  <url><loc>https://example.com/blog/the-200ms-that-make-an-interface-feel-alive</loc></url>
+  <url><loc>https://example.com/blog/learning-in-public-notes-from-a-side-project</loc></url>
+  <url><loc>https://example.com/blog/why-i-still-sketch-on-paper-before-figma</loc></url>
+  <url><loc>https://example.com/blog/five-small-habits</loc></url>
+</urlset>

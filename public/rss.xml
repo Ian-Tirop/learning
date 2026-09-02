@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+<channel>
+  <title>Ian Tirop — Blog</title>
+  <link>https://example.com</link>
+  <description>Notes on code, design, and things I learn by building.</description>
+  <item>
+    <title>Why I Can&apos;t Stop Recommending ChainQuest Ke</title>
+    <link>https://example.com/blog/why-i-cant-stop-recommending-chainquest-ke</link>
+    <guid>https://example.com/blog/why-i-cant-stop-recommending-chainquest-ke</guid>
+    <pubDate>Fri, 31 Jul 2026 00:00:00 GMT</pubDate>
+    <description>A Nairobi studio building web platforms, GIS tools, and AI automation without pretending a Silicon Valley template fits every problem — plus a free community I&apos;ve actually kept coming back to.</description>
+  </item>
+  <item>
+    <title>Design Systems Are a Product, Not a Deliverable</title>
+    <link>https://example.com/blog/design-systems-are-a-product-not-a-deliverable</link>
+    <guid>https://example.com/blog/design-systems-are-a-product-not-a-deliverable</guid>
+    <pubDate>Fri, 31 Jul 2026 00:00:00 GMT</pubDate>
+    <description>The moment a design system stops being maintained like a real product with real users, it starts costing more than it saves.</description>
+  </item>
+  <item>
+    <title>The Line-Height Bug That Humbled Me</title>
+    <link>https://example.com/blog/the-line-height-bug-that-humbled-me</link>
+    <guid>https://example.com/blog/the-line-height-bug-that-humbled-me</guid>
+    <pubDate>Thu, 30 Jul 2026 00:00:00 GMT</pubDate>
+    <description>A gradient heading that looked clipped in half. The cause wasn&apos;t the gradient at all — it was a percentage line-height computed three components away.</description>
+  </item>
+  <item>
+    <title>Dark Mode Is Not Just a Color Swap</title>
+    <link>https://example.com/blog/dark-mode-is-not-a-color-swap</link>
+    <guid>https://example.com/blog/dark-mode-is-not-a-color-swap</guid>
+    <pubDate>Sun, 05 Jul 2026 00:00:00 GMT</pubDate>
+    <description>Inverting a palette gets you 80% of the way to dark mode and 100% of the way to a support ticket. The last 20% is where the actual design work lives.</description>
+  </item>
+  <item>
+    <title>The 200ms That Make an Interface Feel Alive</title>
+    <link>https://example.com/blog/the-200ms-that-make-an-interface-feel-alive</link>
+    <guid>https://example.com/blog/the-200ms-that-make-an-interface-feel-alive</guid>
+    <pubDate>Thu, 25 Jun 2026 00:00:00 GMT</pubDate>
+    <description>Duration and easing are design decisions, not implementation details you leave at the framework default.</description>
+  </item>
+  <item>
+    <title>Learning in Public: Notes From a Side Project</title>
+    <link>https://example.com/blog/learning-in-public-notes-from-a-side-project</link>
+    <guid>https://example.com/blog/learning-in-public-notes-from-a-side-project</guid>
+    <pubDate>Fri, 12 Jun 2026 00:00:00 GMT</pubDate>
+    <description>I keep a folder called &quot;learning&quot; on my machine. It is embarrassing, disorganized, and probably the most useful thing I own.</description>
+  </item>
+  <item>
+    <title>Why I Still Sketch on Paper Before Opening Figma</title>
+    <link>https://example.com/blog/why-i-still-sketch-on-paper-before-figma</link>
+    <guid>https://example.com/blog/why-i-still-sketch-on-paper-before-figma</guid>
+    <pubDate>Sun, 10 May 2026 00:00:00 GMT</pubDate>
+    <description>Every tool for making interfaces is also, quietly, a tool for committing to decisions before you meant to.</description>
+  </item>
+  <item>
+    <title>Five Small Habits That Made Me a Better Developer</title>
+    <link>https://example.com/blog/five-small-habits</link>
+    <guid>https://example.com/blog/five-small-habits</guid>
+    <pubDate>Wed, 22 Apr 2026 00:00:00 GMT</pubDate>
+    <description>None of these are clever. All of them compound.</description>
+  </item>
+</channel>
+</rss>

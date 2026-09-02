@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { ThemeToggle } from './ThemeToggle'
+import { NavSearch } from './NavSearch'
+import { useAdmin } from '../context/AdminContext'
 import './Nav.css'
 
 const links = [
@@ -12,6 +14,7 @@ const links = [
 
 export function Nav() {
   const [open, setOpen] = useState(false)
+  const { isAdmin, effectiveIsAdmin, viewMode, setViewMode, logout } = useAdmin()
 
   return (
     <header className="site-nav">
@@ -45,18 +48,58 @@ export function Nav() {
               {link.label}
             </NavLink>
           ))}
-          <div className="nav-icon-row">
+          {!effectiveIsAdmin && (
             <NavLink
-              to="/write"
+              to="/submit"
               onClick={() => setOpen(false)}
-              className={({ isActive }) => `write-link${isActive ? ' active' : ''}`}
-              aria-label="Write and manage posts"
-              title="Write"
+              className={({ isActive }) => (isActive ? 'active' : undefined)}
             >
-              <svg className="icon" role="presentation" aria-hidden="true">
-                <use href="/icons.svg#pencil-icon"></use>
-              </svg>
+              Submit
             </NavLink>
+          )}
+
+          <div className="nav-icon-row">
+            <NavSearch />
+
+            {isAdmin && (
+              <button
+                type="button"
+                className="view-toggle"
+                onClick={() => setViewMode(viewMode === 'admin' ? 'reader' : 'admin')}
+                title={viewMode === 'admin' ? 'Preview the site as a reader' : 'Back to your admin view'}
+              >
+                {viewMode === 'admin' ? 'Admin view' : 'Reader view'}
+              </button>
+            )}
+
+            {effectiveIsAdmin && (
+              <NavLink
+                to="/write"
+                onClick={() => setOpen(false)}
+                className={({ isActive }) => `write-link${isActive ? ' active' : ''}`}
+                aria-label="Write and manage posts"
+                title="Write"
+              >
+                <svg className="icon" role="presentation" aria-hidden="true">
+                  <use href="/icons.svg#pencil-icon"></use>
+                </svg>
+              </NavLink>
+            )}
+
+            {isAdmin && (
+              <button
+                type="button"
+                className="view-toggle"
+                onClick={() => {
+                  logout()
+                  setOpen(false)
+                }}
+                title="Log out"
+              >
+                Log out
+              </button>
+            )}
+
             <ThemeToggle />
           </div>
         </nav>

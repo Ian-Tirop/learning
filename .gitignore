@@ -12,6 +12,12 @@ dist
 dist-ssr
 *.local
 
+# Environment variables (never commit real secrets, e.g. ANTHROPIC_API_KEY)
+.env
+.env.local
+.env.*.local
+.vercel
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
