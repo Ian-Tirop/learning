@@ -23,6 +23,6 @@ export default async function handler(req, res) {
     return
   }
 
-  res.setHeader('Set-Cookie', buildSessionCookie(createSessionToken()))
+  res.setHeader('Set-Cookie', buildSessionCookie(createSessionToken(), req))
   res.status(200).json({ ok: true })
 }

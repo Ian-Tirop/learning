@@ -61,13 +61,24 @@ export function isAdminRequest(req) {
   return verifySessionToken(cookies[COOKIE_NAME])
 }
 
-export function buildSessionCookie(token) {
-  const maxAge = Math.floor(SESSION_TTL_MS / 1000)
-  return `${COOKIE_NAME}=${encodeURIComponent(token)}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=${maxAge}`
+// Browsers silently refuse to store a `Secure` cookie over plain HTTP —
+// that includes `vercel dev` on http://localhost, which would otherwise
+// make login look like it succeeds (200 response) while the session cookie
+// never actually gets set. Vercel's proxy sets x-forwarded-proto, so this
+// is only ever non-https for genuinely-local, non-TLS requests.
+function isHttps(req) {
+  return req.headers['x-forwarded-proto'] === 'https'
 }
 
-export function buildClearCookie() {
-  return `${COOKIE_NAME}=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0`
+export function buildSessionCookie(token, req) {
+  const maxAge = Math.floor(SESSION_TTL_MS / 1000)
+  const secure = isHttps(req) ? ' Secure;' : ''
+  return `${COOKIE_NAME}=${encodeURIComponent(token)}; HttpOnly;${secure} SameSite=Lax; Path=/; Max-Age=${maxAge}`
+}
+
+export function buildClearCookie(req) {
+  const secure = isHttps(req) ? ' Secure;' : ''
+  return `${COOKIE_NAME}=;${secure} HttpOnly; SameSite=Lax; Path=/; Max-Age=0`
 }
 
 export function requireAdmin(req, res) {
