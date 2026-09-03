@@ -1,4 +1,5 @@
 import { getCommentsForPost, getReactionsForComments, createComment, getPostBySlug } from '../_lib/db.js'
+import { withErrorHandling } from '../_lib/http.js'
 
 const MAX_COMMENT_LENGTH = 2000
 const MAX_NAME_LENGTH = 80
@@ -13,7 +14,7 @@ function groupReactions(reactions) {
   return byComment
 }
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (req.method === 'GET') {
     const slug = req.query?.slug
     if (!slug) {
@@ -74,3 +75,5 @@ export default async function handler(req, res) {
 
   res.status(405).json({ error: 'Method not allowed' })
 }
+
+export default withErrorHandling(handler)

@@ -1,8 +1,9 @@
 import { updateComment, deleteComment } from '../_lib/db.js'
+import { withErrorHandling } from '../_lib/http.js'
 
 const MAX_COMMENT_LENGTH = 2000
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   const id = req.query?.id
   if (!id) {
     res.status(400).json({ error: 'An id is required.' })
@@ -43,3 +44,5 @@ export default async function handler(req, res) {
 
   res.status(405).json({ error: 'Method not allowed' })
 }
+
+export default withErrorHandling(handler)

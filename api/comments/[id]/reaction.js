@@ -1,8 +1,9 @@
 import { toggleCommentReaction } from '../../_lib/db.js'
+import { withErrorHandling } from '../../_lib/http.js'
 
 const ALLOWED_EMOJI = new Set(['👍', '❤️', '😂', '🎉', '😮', '👎'])
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   const id = req.query?.id
   if (!id) {
     res.status(400).json({ error: 'An id is required.' })
@@ -27,3 +28,5 @@ export default async function handler(req, res) {
   const active = await toggleCommentReaction(id, visitorId, emoji)
   res.status(200).json({ active })
 }
+
+export default withErrorHandling(handler)

@@ -1,5 +1,6 @@
 import { getPublishedPosts, getAllPostsForAdmin, createPost } from '../_lib/db.js'
 import { isAdminRequest } from '../_lib/auth.js'
+import { withErrorHandling } from '../_lib/http.js'
 import { slugify } from '../../src/lib/slugify.js'
 import { estimateReadingTime } from '../../src/lib/estimateReadingTime.js'
 
@@ -7,7 +8,7 @@ function makeToken() {
   return crypto.randomUUID()
 }
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (req.method === 'GET') {
     const admin = isAdminRequest(req)
     const wantsAll = req.query?.status === 'all'
@@ -89,3 +90,5 @@ export default async function handler(req, res) {
 
   res.status(405).json({ error: 'Method not allowed' })
 }
+
+export default withErrorHandling(handler)

@@ -1,7 +1,8 @@
 import { getPostBySlug, updatePostRow, deletePostRow } from '../_lib/db.js'
 import { isAdminRequest, requireAdmin, safeEqual } from '../_lib/auth.js'
+import { withErrorHandling } from '../_lib/http.js'
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   const slug = req.query?.slug
   if (!slug) {
     res.status(400).json({ error: 'A slug is required.' })
@@ -84,3 +85,5 @@ export default async function handler(req, res) {
 
   res.status(405).json({ error: 'Method not allowed' })
 }
+
+export default withErrorHandling(handler)
