@@ -10,6 +10,9 @@ import {
   accountExistsWithEmail,
   getAccountByEmailForLogin,
   getAccountById,
+  getAccountByIdForAuth,
+  updateAccountProfile,
+  updateAccountPassword,
   getPostsForAccount,
   getLikedPostsForAccount,
   getSavedPostsForAccount,
@@ -121,6 +124,62 @@ async function handleSavedPosts(req, res) {
   res.status(200).json({ posts })
 }
 
+async function handleUpdateProfile(req, res) {
+  const accountId = getReaderAccountId(req)
+  if (!accountId) {
+    res.status(401).json({ error: 'Sign in to update your profile.' })
+    return
+  }
+
+  const body = req.body || {}
+  const displayName = typeof body.displayName === 'string' ? body.displayName.trim() : ''
+  const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : ''
+
+  if (!displayName) {
+    res.status(400).json({ error: 'Your name is required.' })
+    return
+  }
+  if (!email || !email.includes('@')) {
+    res.status(400).json({ error: 'A valid email is required.' })
+    return
+  }
+
+  const existing = await getAccountByEmailForLogin(email)
+  if (existing && existing.id !== accountId) {
+    res.status(409).json({ error: 'Another account already uses that email.' })
+    return
+  }
+
+  const account = await updateAccountProfile(accountId, { displayName, email })
+  res.status(200).json({ account })
+}
+
+async function handleChangePassword(req, res) {
+  const accountId = getReaderAccountId(req)
+  if (!accountId) {
+    res.status(401).json({ error: 'Sign in to change your password.' })
+    return
+  }
+
+  const body = req.body || {}
+  const currentPassword = typeof body.currentPassword === 'string' ? body.currentPassword : ''
+  const newPassword = typeof body.newPassword === 'string' ? body.newPassword : ''
+
+  if (newPassword.length < 8) {
+    res.status(400).json({ error: 'Your new password must be at least 8 characters.' })
+    return
+  }
+
+  const row = await getAccountByIdForAuth(accountId)
+  if (!row || !verifyPassword(currentPassword, row.password_hash)) {
+    res.status(401).json({ error: 'Your current password is incorrect.' })
+    return
+  }
+
+  await updateAccountPassword(accountId, hashPassword(newPassword))
+  res.status(200).json({ ok: true })
+}
+
 async function handler(req, res) {
   const action = req.query?.action
 
@@ -131,6 +190,8 @@ async function handler(req, res) {
   if (action === 'my-posts' && req.method === 'GET') return handleMyPosts(req, res)
   if (action === 'liked-posts' && req.method === 'GET') return handleLikedPosts(req, res)
   if (action === 'saved-posts' && req.method === 'GET') return handleSavedPosts(req, res)
+  if (action === 'update-profile' && req.method === 'POST') return handleUpdateProfile(req, res)
+  if (action === 'change-password' && req.method === 'POST') return handleChangePassword(req, res)
 
   res.status(404).json({ error: 'Not found.' })
 }

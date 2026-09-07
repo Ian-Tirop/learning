@@ -85,6 +85,10 @@
   <symbol id="star-icon" viewBox="0 0 20 20">
     <path fill="currentColor" stroke="currentColor" stroke-linejoin="round" stroke-width="1.1" d="m10 2.8 2.15 4.55 4.95.62-3.65 3.42.98 4.91L10 13.9l-4.43 2.4.98-4.91-3.65-3.42 4.95-.62z"/>
   </symbol>
+  <symbol id="user-icon" viewBox="0 0 20 20">
+    <circle cx="10" cy="6.6" r="3.1" fill="none" stroke="currentColor" stroke-width="1.4"/>
+    <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.4" d="M3.6 17c.5-3.6 3.4-6.1 6.4-6.1s5.9 2.5 6.4 6.1"/>
+  </symbol>
   <symbol id="bookmark-icon" viewBox="0 0 20 20">
     <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.4" d="M6 3.5h8a1 1 0 0 1 1 1V17l-5-3-5 3V4.5a1 1 0 0 1 1-1Z"/>
   </symbol>

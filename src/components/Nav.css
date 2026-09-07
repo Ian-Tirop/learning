@@ -99,7 +99,8 @@
 }
 
 .theme-toggle,
-.write-link {
+.write-link,
+.profile-link {
   display: grid;
   place-items: center;
   width: 36px;
@@ -195,7 +196,8 @@
   }
 }
 
-.write-link.active {
+.write-link.active,
+.profile-link.active {
   color: var(--accent);
   border-color: var(--accent-border);
   background: var(--accent-bg);

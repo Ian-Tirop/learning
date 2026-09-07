@@ -67,27 +67,22 @@ export function Nav() {
               Submit
             </NavLink>
           )}
-          {!effectiveIsAdmin &&
-            (account ? (
-              <NavLink
-                to="/profile"
-                onClick={() => setOpen(false)}
-                className={({ isActive }) => (isActive ? 'active' : undefined)}
-              >
-                Profile
-              </NavLink>
-            ) : (
-              <NavLink
-                to="/account/login"
-                onClick={() => setOpen(false)}
-                className={({ isActive }) => (isActive ? 'active' : undefined)}
-              >
-                Sign in
-              </NavLink>
-            ))}
-
           <div className="nav-icon-row">
             <NavSearch />
+
+            {!effectiveIsAdmin && (
+              <NavLink
+                to={account ? '/profile' : '/account/login'}
+                onClick={() => setOpen(false)}
+                className={({ isActive }) => `profile-link${isActive ? ' active' : ''}`}
+                aria-label={account ? 'Your profile' : 'Sign in'}
+                title={account ? 'Your profile' : 'Sign in'}
+              >
+                <svg className="icon" role="presentation" aria-hidden="true">
+                  <use href="/icons.svg#user-icon"></use>
+                </svg>
+              </NavLink>
+            )}
 
             {isAdmin && (
               <button

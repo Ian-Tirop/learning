@@ -39,8 +39,18 @@ export function AccountProvider({ children }) {
     setAccount(null)
   }
 
+  const updateProfile = async (payload) => {
+    const updated = await accountStore.updateProfile(payload)
+    setAccount(updated)
+    return updated
+  }
+
+  const changePassword = (payload) => accountStore.changePassword(payload)
+
   return (
-    <AccountContext.Provider value={{ account, loading, signup, login, logout, refresh }}>
+    <AccountContext.Provider
+      value={{ account, loading, signup, login, logout, refresh, updateProfile, changePassword }}
+    >
       {children}
     </AccountContext.Provider>
   )

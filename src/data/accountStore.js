@@ -39,3 +39,12 @@ export async function getSavedPosts() {
   const data = await api.get('/api/accounts/saved-posts')
   return data.posts
 }
+
+export async function updateProfile({ displayName, email }) {
+  const data = await api.post('/api/accounts/update-profile', { displayName, email })
+  return data.account
+}
+
+export async function changePassword({ currentPassword, newPassword }) {
+  await api.post('/api/accounts/change-password', { currentPassword, newPassword })
+}

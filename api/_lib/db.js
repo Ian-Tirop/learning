@@ -403,3 +403,24 @@ export async function getAccountById(id) {
   const rows = await sql`SELECT * FROM accounts WHERE id = ${id} LIMIT 1`
   return rows[0] ? mapAccountRow(rows[0]) : null
 }
+
+// Includes password_hash — only ever call this server-side to verify a
+// change-password request's current password. Use getAccountById for
+// anything that returns to a client.
+export async function getAccountByIdForAuth(id) {
+  const rows = await sql`SELECT * FROM accounts WHERE id = ${id} LIMIT 1`
+  return rows[0] || null
+}
+
+export async function updateAccountProfile(id, { displayName, email }) {
+  const rows = await sql`
+    UPDATE accounts SET display_name = ${displayName}, email = ${email}
+    WHERE id = ${id}
+    RETURNING *
+  `
+  return rows[0] ? mapAccountRow(rows[0]) : null
+}
+
+export async function updateAccountPassword(id, passwordHash) {
+  await sql`UPDATE accounts SET password_hash = ${passwordHash} WHERE id = ${id}`
+}

@@ -11,6 +11,16 @@ import './Account.css'
 
 const STATUS_LABEL = { draft: 'Draft', published: 'Published', pending: 'Pending review', rejected: 'Rejected' }
 
+function initials(name) {
+  if (!name) return '?'
+  return name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0].toUpperCase())
+    .join('')
+}
+
 function ArticleRow({ post }) {
   return (
     <li className="write-row">
@@ -30,10 +40,151 @@ function ArticleRow({ post }) {
   )
 }
 
+function ProfileDetailsForm({ account, updateProfile }) {
+  const [displayName, setDisplayName] = useState(account.displayName)
+  const [email, setEmail] = useState(account.email)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState(false)
+
+  const handleSubmit = async (event) => {
+    event.preventDefault()
+    setSaving(true)
+    setError('')
+    setSuccess(false)
+    try {
+      await updateProfile({ displayName, email })
+      setSuccess(true)
+    } catch (err) {
+      setError(err.message || 'Could not update your profile.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <form className="write-form profile-form" onSubmit={handleSubmit}>
+      <p className="body-hint">Your name and email — shown to Ian when you submit a post.</p>
+      <div className="field-row">
+        <label className="field">
+          <span>Name</span>
+          <input
+            type="text"
+            value={displayName}
+            onChange={(event) => {
+              setDisplayName(event.target.value)
+              setSuccess(false)
+            }}
+          />
+        </label>
+        <label className="field">
+          <span>Email</span>
+          <input
+            type="email"
+            value={email}
+            onChange={(event) => {
+              setEmail(event.target.value)
+              setSuccess(false)
+            }}
+          />
+        </label>
+      </div>
+      {error && (
+        <p className="comment-error" role="alert">
+          {error}
+        </p>
+      )}
+      {success && <p className="form-success">Profile updated.</p>}
+      <div className="write-form-actions">
+        <button type="submit" className="btn btn-primary" disabled={saving}>
+          {saving ? 'Saving…' : 'Save profile'}
+        </button>
+      </div>
+    </form>
+  )
+}
+
+function ChangePasswordForm({ changePassword }) {
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState(false)
+
+  const handleSubmit = async (event) => {
+    event.preventDefault()
+    setError('')
+    setSuccess(false)
+
+    if (newPassword !== confirmPassword) {
+      setError('New passwords do not match.')
+      return
+    }
+
+    setSaving(true)
+    try {
+      await changePassword({ currentPassword, newPassword })
+      setSuccess(true)
+      setCurrentPassword('')
+      setNewPassword('')
+      setConfirmPassword('')
+    } catch (err) {
+      setError(err.message || 'Could not change your password.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <form className="write-form profile-form" onSubmit={handleSubmit}>
+      <p className="body-hint">Change your password.</p>
+      <label className="field">
+        <span>Current password</span>
+        <input
+          type="password"
+          value={currentPassword}
+          onChange={(event) => setCurrentPassword(event.target.value)}
+        />
+      </label>
+      <div className="field-row">
+        <label className="field">
+          <span>New password</span>
+          <input
+            type="password"
+            value={newPassword}
+            onChange={(event) => setNewPassword(event.target.value)}
+            placeholder="At least 8 characters"
+          />
+        </label>
+        <label className="field">
+          <span>Confirm new password</span>
+          <input
+            type="password"
+            value={confirmPassword}
+            onChange={(event) => setConfirmPassword(event.target.value)}
+          />
+        </label>
+      </div>
+      {error && (
+        <p className="comment-error" role="alert">
+          {error}
+        </p>
+      )}
+      {success && <p className="form-success">Password changed.</p>}
+      <div className="write-form-actions">
+        <button type="submit" className="btn btn-primary" disabled={saving}>
+          {saving ? 'Saving…' : 'Change password'}
+        </button>
+      </div>
+    </form>
+  )
+}
+
 export function Profile() {
   useDocumentTitle('Your profile — Ian Tirop')
   useMetaRobots()
-  const { account, loading: authLoading, logout } = useAccount()
+  const { account, loading: authLoading, logout, updateProfile, changePassword } = useAccount()
 
   const [posts, setPosts] = useState([])
   const [liked, setLiked] = useState([])
@@ -59,13 +210,26 @@ export function Profile() {
     return <Navigate to="/account/login" replace />
   }
 
+  if (!account) {
+    return (
+      <section className="container write-page">
+        <p className="loading-note">Loading…</p>
+      </section>
+    )
+  }
+
   return (
     <section className="container write-page">
-      <div className="write-header">
-        <div>
+      <div className="profile-header">
+        <div className="profile-avatar" aria-hidden="true">
+          {initials(account.displayName)}
+        </div>
+        <div className="profile-header-info">
           <p className="eyebrow">Your profile</p>
-          <h1>Hi, {account?.displayName}</h1>
-          <p className="write-intro">{account?.email}</p>
+          <h1>{account.displayName}</h1>
+          <p className="write-intro">
+            {account.email} · Member since {formatDate(account.createdAt)}
+          </p>
         </div>
         <div className="write-header-actions">
           <Link to="/submit" className="btn btn-primary">
@@ -74,6 +238,14 @@ export function Profile() {
           <button type="button" className="btn btn-ghost" onClick={logout}>
             Log out
           </button>
+        </div>
+      </div>
+
+      <div className="profile-section">
+        <h2 className="profile-section-title">Account settings</h2>
+        <div className="profile-settings-forms">
+          <ProfileDetailsForm account={account} updateProfile={updateProfile} />
+          <ChangePasswordForm changePassword={changePassword} />
         </div>
       </div>
 
