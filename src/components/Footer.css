@@ -173,6 +173,26 @@
   }
 }
 
+.admin-entry {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  text-decoration: none;
+  opacity: 0.6;
+  transition: color 0.2s var(--ease), opacity 0.2s var(--ease);
+
+  &:hover {
+    color: var(--accent);
+    opacity: 1;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    opacity: 1;
+  }
+}
+
 @media (max-width: 720px) {
   .site-footer-main {
     grid-template-columns: 1fr 1fr;

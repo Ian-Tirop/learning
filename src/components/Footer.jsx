@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import reactLogo from '../assets/react.svg'
 import viteLogo from '../assets/vite.svg'
 import { social } from '../data/social'
+import { useAdmin } from '../context/AdminContext'
 import './Footer.css'
 
 const siteLinks = [
@@ -17,6 +18,7 @@ const resourceLinks = [
 ]
 
 export function Footer() {
+  const { isAdmin } = useAdmin()
   const year = new Date().getFullYear()
 
   const scrollToTop = () => {
@@ -88,6 +90,12 @@ export function Footer() {
             <use href="/icons.svg#arrow-icon"></use>
           </svg>
         </button>
+
+        {!isAdmin && (
+          <Link to="/admin/login" className="admin-entry">
+            Admin
+          </Link>
+        )}
       </div>
     </footer>
   )
