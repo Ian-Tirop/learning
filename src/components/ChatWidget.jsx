@@ -9,6 +9,7 @@ function makeId() {
 }
 
 export function ChatWidget() {
+  const [available, setAvailable] = useState(false)
   const [open, setOpen] = useState(false)
   const [messages, setMessages] = useState([{ id: 'greeting', role: 'assistant', content: GREETING }])
   const [input, setInput] = useState('')
@@ -16,6 +17,22 @@ export function ChatWidget() {
   const [error, setError] = useState('')
   const listRef = useRef(null)
   const inputRef = useRef(null)
+
+  useEffect(() => {
+    let cancelled = false
+    fetch('/api/chat-status')
+      .then((response) => response.json())
+      .then((data) => {
+        if (!cancelled) setAvailable(Boolean(data.available))
+      })
+      .catch(() => {
+        // Not deployed yet, or the endpoint itself is unreachable — stay
+        // hidden rather than show a chat button that can't do anything.
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   useEffect(() => {
     if (open) inputRef.current?.focus()
@@ -73,6 +90,8 @@ export function ChatWidget() {
   const handlePanelKeyDown = (event) => {
     if (event.key === 'Escape') setOpen(false)
   }
+
+  if (!available) return null
 
   return (
     <div className="chat-widget">

@@ -18,6 +18,14 @@ export function Nav() {
 
   return (
     <header className="site-nav">
+      {isAdmin && viewMode === 'reader' && (
+        <div className="reader-preview-banner">
+          <span>👁️ Previewing the site as a reader would see it — no admin controls are showing.</span>
+          <button type="button" onClick={() => setViewMode('admin')}>
+            Return to admin view
+          </button>
+        </div>
+      )}
       <div className="site-nav-inner">
         <NavLink to="/" className="brand" onClick={() => setOpen(false)}>
           <span className="brand-mark">IT</span>
@@ -64,11 +72,11 @@ export function Nav() {
             {isAdmin && (
               <button
                 type="button"
-                className="view-toggle"
+                className={`view-toggle${viewMode === 'reader' ? ' active' : ''}`}
                 onClick={() => setViewMode(viewMode === 'admin' ? 'reader' : 'admin')}
                 title={viewMode === 'admin' ? 'Preview the site as a reader' : 'Back to your admin view'}
               >
-                {viewMode === 'admin' ? 'Admin view' : 'Reader view'}
+                {viewMode === 'admin' ? 'Preview as reader' : 'Exit preview'}
               </button>
             )}
 
