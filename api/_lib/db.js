@@ -51,6 +51,7 @@ function mapPostRow(row) {
     submittedByName: row.submitted_by_name || undefined,
     submittedByEmail: row.submitted_by_email || undefined,
     reviewNote: row.review_note || undefined,
+    authorAccountId: row.author_account_id || null,
     seed: {
       likes: row.seed_likes + Number(row.reaction_likes || 0),
       dislikes: row.seed_dislikes + Number(row.reaction_dislikes || 0),
@@ -105,6 +106,14 @@ export async function getAllPostsForAdmin(excludeVisitorId = null) {
 export async function getPostBySlug(slug, excludeVisitorId = null) {
   const rows = await sqlQuery(postsWithStats('WHERE p.slug = $2', 'LIMIT 1'), [excludeVisitorId, slug])
   return rows[0] ? mapPostRow(rows[0]) : null
+}
+
+export async function getPostsForAccount(accountId) {
+  const rows = await sqlQuery(
+    postsWithStats('WHERE p.author_account_id = $2', 'ORDER BY p.created_at DESC'),
+    [null, accountId],
+  )
+  return rows.map(mapPostRow)
 }
 
 export async function getVisitorPostReaction(slug, visitorId) {
@@ -173,14 +182,15 @@ export async function createPost(post) {
   const rows = await sql`
     INSERT INTO posts (
       slug, title, excerpt, content, tags, cover, date, reading_time, status,
-      link, submitted_by_name, submitted_by_email, edit_token
+      link, submitted_by_name, submitted_by_email, edit_token, author_account_id
     ) VALUES (
       ${post.slug}, ${post.title}, ${post.excerpt},
       ${JSON.stringify(post.content)}::jsonb, ${post.tags}::text[],
       ${post.cover ? JSON.stringify(post.cover) : null}::jsonb,
       ${post.date}, ${post.readingTime}, ${post.status},
       ${post.link ? JSON.stringify(post.link) : null}::jsonb,
-      ${post.submittedByName || null}, ${post.submittedByEmail || null}, ${post.editToken || null}
+      ${post.submittedByName || null}, ${post.submittedByEmail || null}, ${post.editToken || null},
+      ${post.authorAccountId || null}
     )
     RETURNING *
   `
@@ -298,4 +308,39 @@ export async function clearPostReactionField(slug, visitorId, field) {
     `UPDATE post_reactions SET ${column} = NULL WHERE post_slug = $1 AND visitor_id = $2`,
     [slug, visitorId],
   )
+}
+
+function mapAccountRow(row) {
+  return {
+    id: row.id,
+    email: row.email,
+    displayName: row.display_name,
+    createdAt: row.created_at,
+  }
+}
+
+export async function createAccount({ id, email, passwordHash, displayName }) {
+  const rows = await sql`
+    INSERT INTO accounts (id, email, password_hash, display_name)
+    VALUES (${id}, ${email}, ${passwordHash}, ${displayName})
+    RETURNING *
+  `
+  return mapAccountRow(rows[0])
+}
+
+// Includes password_hash — only ever call this server-side to verify a
+// login attempt. Use getAccountById for anything that returns to a client.
+export async function getAccountByEmailForLogin(email) {
+  const rows = await sql`SELECT * FROM accounts WHERE email = ${email} LIMIT 1`
+  return rows[0] || null
+}
+
+export async function accountExistsWithEmail(email) {
+  const rows = await sql`SELECT 1 FROM accounts WHERE email = ${email} LIMIT 1`
+  return rows.length > 0
+}
+
+export async function getAccountById(id) {
+  const rows = await sql`SELECT * FROM accounts WHERE id = ${id} LIMIT 1`
+  return rows[0] ? mapAccountRow(rows[0]) : null
 }

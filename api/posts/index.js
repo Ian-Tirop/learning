@@ -1,5 +1,5 @@
-import { getPublishedPosts, getAllPostsForAdmin, createPost } from '../_lib/db.js'
-import { isAdminRequest } from '../_lib/auth.js'
+import { getPublishedPosts, getAllPostsForAdmin, createPost, getAccountById } from '../_lib/db.js'
+import { isAdminRequest, getReaderAccountId } from '../_lib/auth.js'
 import { withErrorHandling } from '../_lib/http.js'
 import { slugify } from '../../src/lib/slugify.js'
 import { estimateReadingTime } from '../../src/lib/estimateReadingTime.js'
@@ -15,6 +15,13 @@ async function handler(req, res) {
     const visitorId = req.query?.visitorId || null
     const posts =
       wantsAll && admin ? await getAllPostsForAdmin(visitorId) : await getPublishedPosts(visitorId)
+    // submittedByEmail is only ever meant for Ian's eyes in the review
+    // queue — strip it from anything a public/non-admin request sees.
+    if (!admin) {
+      posts.forEach((post) => {
+        delete post.submittedByEmail
+      })
+    }
     res.status(200).json({ posts })
     return
   }
@@ -59,11 +66,25 @@ async function handler(req, res) {
     } else {
       // A reader's request to post: always goes to review, regardless of
       // what the client sends — never trust the client for this.
-      const submittedByName = typeof body.submittedByName === 'string' ? body.submittedByName.trim() : ''
-      const submittedByEmail = typeof body.submittedByEmail === 'string' ? body.submittedByEmail.trim() : ''
-      if (!submittedByName) {
-        res.status(400).json({ error: 'Your name is required to submit a post for review.' })
-        return
+      const readerAccountId = getReaderAccountId(req)
+      const account = readerAccountId ? await getAccountById(readerAccountId) : null
+
+      let submittedByName
+      let submittedByEmail
+      if (account) {
+        // Signed-in reader — use their verified identity, not whatever the
+        // client happened to send, and remember which account owns this
+        // post so they can track/edit it from any device (see /dashboard).
+        submittedByName = account.displayName
+        submittedByEmail = account.email
+        post.authorAccountId = account.id
+      } else {
+        submittedByName = typeof body.submittedByName === 'string' ? body.submittedByName.trim() : ''
+        submittedByEmail = typeof body.submittedByEmail === 'string' ? body.submittedByEmail.trim() : ''
+        if (!submittedByName) {
+          res.status(400).json({ error: 'Your name is required to submit a post for review.' })
+          return
+        }
       }
       post.status = 'pending'
       post.submittedByName = submittedByName

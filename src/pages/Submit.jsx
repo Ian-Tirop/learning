@@ -5,6 +5,7 @@ import { coverPresets } from '../data/coverPresets'
 import { parsePostBody, serializePostBody } from '../lib/postBody'
 import { estimateReadingTime } from '../lib/estimateReadingTime'
 import { getMySubmissions, addMySubmission } from '../lib/mySubmissions'
+import { useAccount } from '../context/AccountContext'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { useMetaRobots } from '../hooks/useMetaRobots'
 import './write/Write.css'
@@ -19,6 +20,7 @@ export function Submit() {
   const [searchParams] = useSearchParams()
   const token = searchParams.get('token') || ''
   const isEdit = Boolean(slug)
+  const { account, loading: accountLoading } = useAccount()
 
   useDocumentTitle(isEdit ? 'Edit your submission — Ian Tirop' : 'Submit a post — Ian Tirop')
   useMetaRobots()
@@ -32,12 +34,7 @@ export function Submit() {
     let cancelled = false
     getPostBySlug(slug, { token })
       .then((post) => {
-        if (cancelled) return
-        if (post.status !== 'pending') {
-          setLoadError('This submission has already been reviewed and can no longer be edited.')
-        } else {
-          setExisting(post)
-        }
+        if (!cancelled) setExisting(post)
       })
       .catch(() => {
         if (!cancelled) setLoadError("Couldn't find that submission — check the link you used.")
@@ -49,6 +46,12 @@ export function Submit() {
       cancelled = true
     }
   }, [slug, token, isEdit])
+
+  // A signed-in account can edit any of its own posts, any time — an
+  // anonymous edit token only works while the post is still pending.
+  const editableByToken = Boolean(token) && existing?.status === 'pending'
+  const editableByAccount = Boolean(account) && Boolean(existing?.authorAccountId) && account.id === existing.authorAccountId
+  const canEditExisting = editableByToken || editableByAccount
 
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -76,7 +79,7 @@ export function Submit() {
     event.preventDefault()
     const parsedContent = parsePostBody(bodyText)
 
-    if (!isEdit && !name.trim()) {
+    if (!isEdit && !account && !name.trim()) {
       setError('Your name is required so Ian knows who to credit.')
       return
     }
@@ -120,7 +123,7 @@ export function Submit() {
     }
   }
 
-  if (isEdit && loadingExisting) {
+  if (isEdit && (loadingExisting || (existing && accountLoading))) {
     return (
       <section className="container write-page">
         <p className="loading-note">Loading your submission…</p>
@@ -139,6 +142,20 @@ export function Submit() {
     )
   }
 
+  if (isEdit && existing && !canEditExisting) {
+    return (
+      <section className="container write-page">
+        <p className="comment-error write-error">
+          This submission has already been reviewed and can no longer be edited this way. Sign in to
+          the account that submitted it to edit it any time.
+        </p>
+        <Link to="/account/login" className="btn btn-ghost">
+          Sign in
+        </Link>
+      </section>
+    )
+  }
+
   if (result) {
     return (
       <section className="container write-page submit-page">
@@ -150,17 +167,29 @@ export function Submit() {
         </div>
         <p className="submit-confirmation">
           {isEdit
-            ? "Your changes were saved. It's still pending Ian's review."
+            ? "Your changes were saved. It's pending Ian's review before it goes live."
             : "Ian reviews every submission before it goes live. If it's approved, it'll appear on the blog under your name."}
         </p>
-        <p className="submit-confirmation">
-          Keep this link to check on or edit your submission before it&apos;s reviewed:
-        </p>
-        <p className="submit-edit-link">
-          <Link to={`/submit/edit/${result.slug}?token=${result.token}`}>
-            /submit/edit/{result.slug}
-          </Link>
-        </p>
+        {account ? (
+          <p className="submit-confirmation">
+            Track its status any time from <Link to="/dashboard">your dashboard</Link>.
+          </p>
+        ) : (
+          <>
+            <p className="submit-confirmation">
+              Keep this link to check on or edit your submission before it&apos;s reviewed:
+            </p>
+            <p className="submit-edit-link">
+              <Link to={`/submit/edit/${result.slug}?token=${result.token}`}>
+                /submit/edit/{result.slug}
+              </Link>
+            </p>
+            <p className="submit-confirmation">
+              Or <Link to="/account/signup">create an account</Link> to track and edit your
+              submissions from any device.
+            </p>
+          </>
+        )}
       </section>
     )
   }
@@ -173,7 +202,9 @@ export function Submit() {
           <h1>{isEdit ? 'Edit your submission' : 'Write for the blog'}</h1>
           <p className="write-intro">
             {isEdit
-              ? 'Still pending review — you can update it any time before then.'
+              ? existing?.status === 'published'
+                ? "Saving will send this back for review before your changes go live."
+                : 'Still pending review — you can update it any time before then.'
               : "Send Ian a post you'd like to see published. He reviews every submission — nothing goes live without his approval."}
           </p>
         </div>
@@ -182,7 +213,14 @@ export function Submit() {
       {error && <p className="comment-error write-error">{error}</p>}
 
       <form className="write-form" onSubmit={handleSubmit}>
-        {!isEdit && (
+        {!isEdit && account && (
+          <p className="write-intro">
+            Submitting as <strong>{account.displayName}</strong> ({account.email}) —{' '}
+            <Link to="/dashboard">view your dashboard</Link>.
+          </p>
+        )}
+
+        {!isEdit && !account && (
           <div className="field-row">
             <label className="field">
               <span>Your name</span>
@@ -267,7 +305,14 @@ export function Submit() {
         </div>
       </form>
 
-      {!isEdit && submissions.length > 0 && (
+      {!isEdit && !account && (
+        <p className="write-intro">
+          <Link to="/account/signup">Create an account</Link> to track and edit your submissions
+          from any device, even after Ian&apos;s reviewed one.
+        </p>
+      )}
+
+      {!isEdit && !account && submissions.length > 0 && (
         <div className="my-submissions">
           <h2>Your submissions from this browser</h2>
           <ul>

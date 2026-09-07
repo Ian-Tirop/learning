@@ -3,6 +3,7 @@ import { NavLink } from 'react-router-dom'
 import { ThemeToggle } from './ThemeToggle'
 import { NavSearch } from './NavSearch'
 import { useAdmin } from '../context/AdminContext'
+import { useAccount } from '../context/AccountContext'
 import './Nav.css'
 
 const links = [
@@ -15,6 +16,7 @@ const links = [
 export function Nav() {
   const [open, setOpen] = useState(false)
   const { isAdmin, effectiveIsAdmin, viewMode, setViewMode, logout } = useAdmin()
+  const { account } = useAccount()
 
   return (
     <header className="site-nav">
@@ -65,6 +67,24 @@ export function Nav() {
               Submit
             </NavLink>
           )}
+          {!effectiveIsAdmin &&
+            (account ? (
+              <NavLink
+                to="/dashboard"
+                onClick={() => setOpen(false)}
+                className={({ isActive }) => (isActive ? 'active' : undefined)}
+              >
+                Dashboard
+              </NavLink>
+            ) : (
+              <NavLink
+                to="/account/login"
+                onClick={() => setOpen(false)}
+                className={({ isActive }) => (isActive ? 'active' : undefined)}
+              >
+                Sign in
+              </NavLink>
+            ))}
 
           <div className="nav-icon-row">
             <NavSearch />

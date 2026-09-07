@@ -157,6 +157,8 @@ export function WriteDashboard() {
                 {formatDate(post.date)}
                 {' · '}
                 {post.readingTime} min read
+                {post.submittedByName && ` · submitted by ${post.submittedByName}`}
+                {post.submittedByEmail && ` (${post.submittedByEmail})`}
                 {post.status === 'rejected' && post.reviewNote && ` · note: ${post.reviewNote}`}
               </p>
             </div>
