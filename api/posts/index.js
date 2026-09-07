@@ -74,7 +74,7 @@ async function handler(req, res) {
       if (account) {
         // Signed-in reader — use their verified identity, not whatever the
         // client happened to send, and remember which account owns this
-        // post so they can track/edit it from any device (see /dashboard).
+        // post so they can track/edit it from any device (see /profile).
         submittedByName = account.displayName
         submittedByEmail = account.email
         post.authorAccountId = account.id

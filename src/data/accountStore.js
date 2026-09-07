@@ -27,3 +27,15 @@ export async function getMyPosts() {
   const data = await api.get('/api/accounts/my-posts')
   return data.posts
 }
+
+/** Published posts the signed-in reader's account has liked, any author. */
+export async function getLikedPosts() {
+  const data = await api.get('/api/accounts/liked-posts')
+  return data.posts
+}
+
+/** Published posts the signed-in reader's account has bookmarked. */
+export async function getSavedPosts() {
+  const data = await api.get('/api/accounts/saved-posts')
+  return data.posts
+}

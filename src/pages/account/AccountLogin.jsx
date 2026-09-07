@@ -19,7 +19,7 @@ export function AccountLogin() {
   const [submitting, setSubmitting] = useState(false)
 
   if (!loading && account) {
-    return <Navigate to="/dashboard" replace />
+    return <Navigate to="/profile" replace />
   }
 
   const handleSubmit = async (event) => {
@@ -28,7 +28,7 @@ export function AccountLogin() {
     setError('')
     try {
       await login({ email, password })
-      navigate('/dashboard')
+      navigate('/profile')
     } catch (err) {
       setError(err.message || 'Incorrect email or password.')
     } finally {

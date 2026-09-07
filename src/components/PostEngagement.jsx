@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
+import { useAccount } from '../context/AccountContext'
 import './PostEngagement.css'
 
 export function PostEngagement({
@@ -8,13 +10,26 @@ export function PostEngagement({
   dislikes,
   toggleLike,
   toggleDislike,
+  saved,
+  toggleSave,
   average,
   ratingCount,
   userRating,
   rate,
 }) {
+  const { account } = useAccount()
   const [hoverRating, setHoverRating] = useState(0)
   const [copied, setCopied] = useState(false)
+  const [saveError, setSaveError] = useState(false)
+
+  const handleToggleSave = async () => {
+    try {
+      setSaveError(false)
+      await toggleSave()
+    } catch {
+      setSaveError(true)
+    }
+  }
 
   const displayedStars = hoverRating || userRating || Math.round(average)
   const shareUrl = `${window.location.origin}/blog/${post.slug}`
@@ -58,7 +73,25 @@ export function PostEngagement({
             </svg>
             {dislikes}
           </button>
+          <button
+            type="button"
+            className={`reaction-btn save${saved ? ' active' : ''}`}
+            onClick={handleToggleSave}
+            aria-pressed={saved}
+            aria-label={saved ? 'Remove from saved articles' : 'Save this article'}
+          >
+            <svg className="icon" role="presentation" aria-hidden="true">
+              <use href="/icons.svg#bookmark-icon"></use>
+            </svg>
+            {saved ? 'Saved' : 'Save'}
+          </button>
         </div>
+
+        {saveError && !account && (
+          <p className="save-signin-hint">
+            <Link to="/account/login">Sign in</Link> to save articles to your profile.
+          </p>
+        )}
 
         <div className="share-actions">
           <button type="button" className="btn btn-ghost" onClick={handleCopyLink} aria-live="polite">

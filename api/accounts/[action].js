@@ -11,6 +11,8 @@ import {
   getAccountByEmailForLogin,
   getAccountById,
   getPostsForAccount,
+  getLikedPostsForAccount,
+  getSavedPostsForAccount,
 } from '../_lib/db.js'
 import {
   hashPassword,
@@ -99,6 +101,26 @@ async function handleMyPosts(req, res) {
   res.status(200).json({ posts })
 }
 
+async function handleLikedPosts(req, res) {
+  const accountId = getReaderAccountId(req)
+  if (!accountId) {
+    res.status(401).json({ error: 'Sign in to see your liked articles.' })
+    return
+  }
+  const posts = await getLikedPostsForAccount(accountId)
+  res.status(200).json({ posts })
+}
+
+async function handleSavedPosts(req, res) {
+  const accountId = getReaderAccountId(req)
+  if (!accountId) {
+    res.status(401).json({ error: 'Sign in to see your saved articles.' })
+    return
+  }
+  const posts = await getSavedPostsForAccount(accountId)
+  res.status(200).json({ posts })
+}
+
 async function handler(req, res) {
   const action = req.query?.action
 
@@ -107,6 +129,8 @@ async function handler(req, res) {
   if (action === 'logout' && req.method === 'POST') return handleLogout(req, res)
   if (action === 'session' && req.method === 'GET') return handleSession(req, res)
   if (action === 'my-posts' && req.method === 'GET') return handleMyPosts(req, res)
+  if (action === 'liked-posts' && req.method === 'GET') return handleLikedPosts(req, res)
+  if (action === 'saved-posts' && req.method === 'GET') return handleSavedPosts(req, res)
 
   res.status(404).json({ error: 'Not found.' })
 }

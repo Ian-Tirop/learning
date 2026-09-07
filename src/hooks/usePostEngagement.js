@@ -34,6 +34,7 @@ export function usePostEngagement(post) {
   const slug = post?.slug
   const [myReaction, setMyReaction] = useState(null)
   const [myRating, setMyRating] = useState(null)
+  const [saved, setSaved] = useState(false)
   const [rawComments, setRawComments] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -46,6 +47,7 @@ export function usePostEngagement(post) {
       ])
       setMyReaction(reactionData.reaction)
       setMyRating(reactionData.rating)
+      setSaved(Boolean(reactionData.saved))
       setRawComments(commentsData.comments)
     } catch {
       // Post not yet published/reachable, or the API isn't available — the
@@ -69,11 +71,16 @@ export function usePostEngagement(post) {
     const data = await api.post(`/api/post-reactions/${encodeURIComponent(slug)}`, { visitorId, ...payload })
     setMyReaction(data.reaction)
     setMyRating(data.rating)
+    setSaved(Boolean(data.saved))
+    return data
   }
 
   const toggleLike = () => postReaction({ reaction: myReaction === 'like' ? null : 'like' })
   const toggleDislike = () => postReaction({ reaction: myReaction === 'dislike' ? null : 'dislike' })
   const rate = (value) => postReaction({ rating: myRating === value ? null : value })
+  // Throws (e.g. "Sign in to save articles.") if the reader isn't signed
+  // into an account — saving needs a durable identity, unlike like/dislike.
+  const toggleSave = () => postReaction({ saved: !saved })
 
   const addComment = async (name, text) => {
     const data = await api.post('/api/comments', { postSlug: slug, name, text, visitorId })
@@ -123,6 +130,8 @@ export function usePostEngagement(post) {
     dislikes,
     toggleLike,
     toggleDislike,
+    saved,
+    toggleSave,
     average,
     ratingCount,
     userRating: myRating,

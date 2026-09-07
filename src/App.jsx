@@ -10,7 +10,7 @@ import { Submit } from './pages/Submit'
 import { Login } from './pages/admin/Login'
 import { AccountSignup } from './pages/account/AccountSignup'
 import { AccountLogin } from './pages/account/AccountLogin'
-import { Dashboard } from './pages/account/Dashboard'
+import { Profile } from './pages/account/Profile'
 import { NotFound } from './pages/NotFound'
 import { WriteDashboard } from './pages/write/WriteDashboard'
 import { PostEditor } from './pages/write/PostEditor'
@@ -39,7 +39,7 @@ function App() {
             <Route path="/admin/login" element={<Login />} />
             <Route path="/account/signup" element={<AccountSignup />} />
             <Route path="/account/login" element={<AccountLogin />} />
-            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/profile" element={<Profile />} />
             <Route path="/write" element={<WriteDashboard />} />
             <Route path="/write/new" element={<PostEditor />} />
             <Route path="/write/:slug" element={<PostEditor />} />

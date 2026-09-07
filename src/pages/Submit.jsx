@@ -172,7 +172,7 @@ export function Submit() {
         </p>
         {account ? (
           <p className="submit-confirmation">
-            Track its status any time from <Link to="/dashboard">your dashboard</Link>.
+            Track its status any time from <Link to="/profile">your profile</Link>.
           </p>
         ) : (
           <>
@@ -216,7 +216,7 @@ export function Submit() {
         {!isEdit && account && (
           <p className="write-intro">
             Submitting as <strong>{account.displayName}</strong> ({account.email}) —{' '}
-            <Link to="/dashboard">view your dashboard</Link>.
+            <Link to="/profile">view your profile</Link>.
           </p>
         )}
 

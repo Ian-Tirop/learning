@@ -116,6 +116,60 @@ export async function getPostsForAccount(accountId) {
   return rows.map(mapPostRow)
 }
 
+// Published posts this account has liked — from any device, since the
+// like is attributed to the account (not just that device's visitor_id)
+// whenever it's made while signed in. Not restricted by author: a like
+// counts the same whether the post is Ian's own or another reader's
+// approved submission.
+export async function getLikedPostsForAccount(accountId) {
+  const rows = await sqlQuery(
+    postsWithStats(
+      `WHERE p.status = 'published' AND p.slug IN (
+        SELECT post_slug FROM post_reactions WHERE account_id = $2 AND reaction = 'like'
+      )`,
+      'ORDER BY p.date DESC',
+    ),
+    [null, accountId],
+  )
+  return rows.map(mapPostRow)
+}
+
+// Published posts this account has bookmarked — see saved_posts in
+// db/schema.sql. Bookmarking requires an account (there's no anonymous
+// equivalent), so this is always looked up by account id, never visitor_id.
+export async function getSavedPostsForAccount(accountId) {
+  const rows = await sqlQuery(
+    postsWithStats(
+      `WHERE p.status = 'published' AND p.slug IN (
+        SELECT post_slug FROM saved_posts WHERE account_id = $2
+      )`,
+      'ORDER BY p.date DESC',
+    ),
+    [null, accountId],
+  )
+  return rows.map(mapPostRow)
+}
+
+export async function setPostSaved(accountId, slug, saved) {
+  if (saved) {
+    await sql`
+      INSERT INTO saved_posts (account_id, post_slug)
+      VALUES (${accountId}, ${slug})
+      ON CONFLICT (account_id, post_slug) DO NOTHING
+    `
+  } else {
+    await sql`DELETE FROM saved_posts WHERE account_id = ${accountId} AND post_slug = ${slug}`
+  }
+}
+
+export async function isPostSavedByAccount(accountId, slug) {
+  if (!accountId) return false
+  const rows = await sql`
+    SELECT 1 FROM saved_posts WHERE account_id = ${accountId} AND post_slug = ${slug} LIMIT 1
+  `
+  return rows.length > 0
+}
+
 export async function getVisitorPostReaction(slug, visitorId) {
   if (!visitorId) return { reaction: null, rating: null }
   const rows = await sql`
@@ -291,14 +345,19 @@ export async function toggleCommentReaction(commentId, visitorId, emoji) {
   return true
 }
 
-export async function upsertPostReaction(slug, visitorId, { reaction, rating }) {
+// `accountId`, when the reader is signed in, tags this visitor_id's row
+// with their account — that's what lets getLikedPostsForAccount find it
+// later, from any device. COALESCE keeps a previously-recorded account_id
+// if a later call (e.g. signed out) doesn't supply one.
+export async function upsertPostReaction(slug, visitorId, { reaction, rating, accountId }) {
   await sql`
-    INSERT INTO post_reactions (post_slug, visitor_id, reaction, rating)
-    VALUES (${slug}, ${visitorId}, ${reaction ?? null}, ${rating ?? null})
+    INSERT INTO post_reactions (post_slug, visitor_id, reaction, rating, account_id)
+    VALUES (${slug}, ${visitorId}, ${reaction ?? null}, ${rating ?? null}, ${accountId ?? null})
     ON CONFLICT (post_slug, visitor_id)
     DO UPDATE SET
       reaction = COALESCE(EXCLUDED.reaction, post_reactions.reaction),
-      rating = COALESCE(EXCLUDED.rating, post_reactions.rating)
+      rating = COALESCE(EXCLUDED.rating, post_reactions.rating),
+      account_id = COALESCE(EXCLUDED.account_id, post_reactions.account_id)
   `
 }
 

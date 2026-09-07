@@ -70,11 +70,11 @@ export function Nav() {
           {!effectiveIsAdmin &&
             (account ? (
               <NavLink
-                to="/dashboard"
+                to="/profile"
                 onClick={() => setOpen(false)}
                 className={({ isActive }) => (isActive ? 'active' : undefined)}
               >
-                Dashboard
+                Profile
               </NavLink>
             ) : (
               <NavLink

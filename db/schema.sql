@@ -73,5 +73,23 @@ CREATE TABLE IF NOT EXISTS post_reactions (
   visitor_id text NOT NULL,
   reaction text CHECK (reaction IN ('like', 'dislike')),
   rating int CHECK (rating BETWEEN 1 AND 5),
+  account_id text REFERENCES accounts(id) ON DELETE SET NULL,
   PRIMARY KEY (post_slug, visitor_id)
 );
+
+-- Same already-deployed-database situation as posts.author_account_id above.
+ALTER TABLE post_reactions ADD COLUMN IF NOT EXISTS account_id text REFERENCES accounts(id) ON DELETE SET NULL;
+
+CREATE INDEX IF NOT EXISTS post_reactions_account_id_idx ON post_reactions(account_id);
+
+-- A reader's bookmarked articles — account-only (no anonymous equivalent),
+-- since a bookmark's whole point is to persist across devices, which only
+-- an account (not the per-browser visitor_id) can do.
+CREATE TABLE IF NOT EXISTS saved_posts (
+  account_id text NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+  post_slug text NOT NULL REFERENCES posts(slug) ON DELETE CASCADE,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (account_id, post_slug)
+);
+
+CREATE INDEX IF NOT EXISTS saved_posts_account_id_idx ON saved_posts(account_id);
