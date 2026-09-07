@@ -1,5 +1,5 @@
 -- Run once by scripts/migrate.js. Kept here as the readable source of truth
--- for the schema; migrate.js issues the same statements programmatically.
+-- for the schema — migrate.js issues the same statements programmatically.
 
 CREATE TABLE IF NOT EXISTS posts (
   slug text PRIMARY KEY,

@@ -17,8 +17,17 @@ const sql = neon(connectionString)
 const here = path.dirname(fileURLToPath(import.meta.url))
 
 async function applySchema() {
-  const schema = readFileSync(path.join(here, '../db/schema.sql'), 'utf8')
-  const statements = schema
+  const raw = readFileSync(path.join(here, '../db/schema.sql'), 'utf8')
+  // Strip full-line `--` comments first — splitting on every `;` in the raw
+  // file breaks the moment a comment's prose happens to contain one (as the
+  // file header originally did), turning the tail of that comment into
+  // invalid "SQL" on its own.
+  const withoutComments = raw
+    .split('\n')
+    .filter((line) => !line.trim().startsWith('--'))
+    .join('\n')
+
+  const statements = withoutComments
     .split(';')
     .map((statement) => statement.trim())
     .filter(Boolean)
@@ -34,7 +43,7 @@ function makeId() {
 }
 
 async function seedPosts() {
-  const { rows } = await sql.query('SELECT COUNT(*)::int AS count FROM posts')
+  const rows = await sql.query('SELECT COUNT(*)::int AS count FROM posts')
   if (rows[0].count > 0) {
     console.log(`[migrate] posts table already has ${rows[0].count} rows — skipping seed`)
     return
