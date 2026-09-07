@@ -1,5 +1,5 @@
-import { toggleCommentReaction } from '../../_lib/db.js'
-import { withErrorHandling } from '../../_lib/http.js'
+import { toggleCommentReaction } from '../_lib/db.js'
+import { withErrorHandling } from '../_lib/http.js'
 
 const ALLOWED_EMOJI = new Set(['👍', '❤️', '😂', '🎉', '😮', '👎'])
 

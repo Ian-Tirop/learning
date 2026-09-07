@@ -13,11 +13,27 @@ function getConnectionString() {
   return url
 }
 
-let cachedSql = null
+let cachedClient = null
 
+function getClient() {
+  if (!cachedClient) cachedClient = neon(getConnectionString())
+  return cachedClient
+}
+
+// Tagged-template usage: sql`SELECT ...`
 export function sql(...args) {
-  if (!cachedSql) cachedSql = neon(getConnectionString())
-  return cachedSql(...args)
+  return getClient()(...args)
+}
+
+// Parameterized-string usage: sql.query('SELECT ... $1', [x]). Deliberately
+// a separate function rather than `sql.query` — `sql` above is a plain
+// wrapper function, and a `.query` property attached to it would forward
+// calls but silently drop the real client's `.query` method (only the
+// client neon() actually returns has it), which is exactly the bug this
+// replaced: sql.query(...) failed with "sql.query is not a function" for
+// every one of these call sites until this was split out.
+function sqlQuery(text, params) {
+  return getClient().query(text, params)
 }
 
 function mapPostRow(row) {
@@ -75,19 +91,19 @@ function postsWithStats(where, orderBy) {
 }
 
 export async function getPublishedPosts(excludeVisitorId = null) {
-  const rows = await sql.query(postsWithStats("WHERE p.status = 'published'", 'ORDER BY p.date DESC'), [
+  const rows = await sqlQuery(postsWithStats("WHERE p.status = 'published'", 'ORDER BY p.date DESC'), [
     excludeVisitorId,
   ])
   return rows.map(mapPostRow)
 }
 
 export async function getAllPostsForAdmin(excludeVisitorId = null) {
-  const rows = await sql.query(postsWithStats('', 'ORDER BY p.created_at DESC'), [excludeVisitorId])
+  const rows = await sqlQuery(postsWithStats('', 'ORDER BY p.created_at DESC'), [excludeVisitorId])
   return rows.map(mapPostRow)
 }
 
 export async function getPostBySlug(slug, excludeVisitorId = null) {
-  const rows = await sql.query(postsWithStats('WHERE p.slug = $2', 'LIMIT 1'), [excludeVisitorId, slug])
+  const rows = await sqlQuery(postsWithStats('WHERE p.slug = $2', 'LIMIT 1'), [excludeVisitorId, slug])
   return rows[0] ? mapPostRow(rows[0]) : null
 }
 
@@ -209,7 +225,7 @@ export async function updatePostRow(slug, fields) {
   setClauses.push('updated_at = now()')
   values.push(slug)
 
-  const rows = await sql.query(
+  const rows = await sqlQuery(
     `UPDATE posts SET ${setClauses.join(', ')} WHERE slug = $${index} RETURNING *`,
     values,
   )
@@ -278,7 +294,7 @@ export async function upsertPostReaction(slug, visitorId, { reaction, rating }) 
 
 export async function clearPostReactionField(slug, visitorId, field) {
   const column = field === 'reaction' ? 'reaction' : 'rating'
-  await sql.query(
+  await sqlQuery(
     `UPDATE post_reactions SET ${column} = NULL WHERE post_slug = $1 AND visitor_id = $2`,
     [slug, visitorId],
   )

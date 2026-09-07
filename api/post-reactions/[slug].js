@@ -1,5 +1,5 @@
-import { upsertPostReaction, clearPostReactionField, getVisitorPostReaction } from '../../_lib/db.js'
-import { withErrorHandling } from '../../_lib/http.js'
+import { upsertPostReaction, clearPostReactionField, getVisitorPostReaction } from '../_lib/db.js'
+import { withErrorHandling } from '../_lib/http.js'
 
 async function handler(req, res) {
   const slug = req.query?.slug

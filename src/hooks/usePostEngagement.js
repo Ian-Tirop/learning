@@ -41,7 +41,7 @@ export function usePostEngagement(post) {
     if (!slug) return
     try {
       const [reactionData, commentsData] = await Promise.all([
-        api.get(`/api/posts/${encodeURIComponent(slug)}/reaction?visitorId=${encodeURIComponent(visitorId)}`),
+        api.get(`/api/post-reactions/${encodeURIComponent(slug)}?visitorId=${encodeURIComponent(visitorId)}`),
         api.get(`/api/comments?slug=${encodeURIComponent(slug)}`),
       ])
       setMyReaction(reactionData.reaction)
@@ -66,7 +66,7 @@ export function usePostEngagement(post) {
   const average = ratingCount > 0 ? ratingSum / ratingCount : 0
 
   const postReaction = async (payload) => {
-    const data = await api.post(`/api/posts/${encodeURIComponent(slug)}/reaction`, { visitorId, ...payload })
+    const data = await api.post(`/api/post-reactions/${encodeURIComponent(slug)}`, { visitorId, ...payload })
     setMyReaction(data.reaction)
     setMyRating(data.rating)
   }
@@ -103,7 +103,7 @@ export function usePostEngagement(post) {
   }
 
   const toggleReaction = async (commentId, emoji) => {
-    const data = await api.post(`/api/comments/${commentId}/reaction`, { visitorId, emoji })
+    const data = await api.post(`/api/comment-reactions/${commentId}`, { visitorId, emoji })
     setRawComments((prev) =>
       prev.map((comment) => {
         if (comment.id !== commentId) return comment
