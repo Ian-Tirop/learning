@@ -10,6 +10,8 @@ This started as a fully static, no-backend demo. It now has a real
 database and a real login — see [Backend & data model](#backend--data-model)
 for what that changed and why.
 
+**Live**: https://learning-peach-two.vercel.app
+
 ## Features
 
 - **Pages**: Home, Blog (list + search + tag filter), individual post pages,
@@ -71,8 +73,9 @@ for what that changed and why.
   window-chrome dots in the three accent colors, a snippet describing the
   blog itself — with a few topic tags floating at its corners, plus a
   pill-styled intro badge and a bouncing scroll cue down to the topics row.
-- **AI chat widget** on every page (bottom-right) that answers questions
-  about the blog, grounded in the live post content — see
+- **AI chat widget** (bottom-right) that answers questions about the blog,
+  grounded in the live post content — shows up automatically once
+  `ANTHROPIC_API_KEY` is configured, and stays hidden otherwise. See
   [AI chat widget](#ai-chat-widget).
 - Distinctive editorial type (Fraunces for headings, system sans for body),
   reduced-motion-aware entrance animations, and themed selection/scrollbar
@@ -151,12 +154,17 @@ api/
   _lib/
     db.js                  Postgres query helpers (Neon serverless driver), shared by every route
     auth.js                 Signs/verifies the admin session cookie
+    http.js                 withErrorHandling() — any route's unexpected throw becomes a clean
+                            JSON 500 instead of Vercel's generic crash page
   admin/                    login.js, logout.js, session.js
-  posts/                    index.js (list/create), [slug].js (get/update/delete),
-                            [slug]/reaction.js (like/dislike/rating)
-  comments/                 index.js (list/create), [id].js (edit/delete),
-                            [id]/reaction.js (emoji toggle), top.js (homepage testimonials)
+  posts/                    index.js (list/create), [slug].js (get/update/delete)
+  post-reactions/           [slug].js (like/dislike/rating) — a sibling route, not nested under
+                            posts/[slug]/, to avoid a routing collision (see note below)
+  comments/                 index.js (list/create), [id].js (edit/delete), top.js (homepage testimonials)
+  comment-reactions/        [id].js (emoji toggle) — same sibling-route reasoning as post-reactions
   chat.js                  Anthropic proxy for the chat widget
+  chat-status.js           Tells the frontend whether ANTHROPIC_API_KEY is set, so the widget can
+                            hide itself instead of showing a chat button that always fails
 db/
   schema.sql                Table definitions (posts, comments, comment_reactions, post_reactions)
 vercel.json                 SPA rewrite for client-side routing on Vercel
@@ -248,12 +256,16 @@ approve/reject) checks that cookie server-side — the frontend's admin state
 (`src/context/AdminContext.jsx`) is only ever a UI convenience, never the
 actual gate.
 
-**Admin/reader view toggle**: once logged in, a pill in the nav reads
-"Admin view" — click it to flip to "Reader view" without logging out. That
-sets a `viewMode` (in `sessionStorage`, not the login itself) that hides
-every admin-only affordance (the Write pencil icon, "Edit this post" links,
-the review queue) so you can see exactly what a normal visitor sees. Flip
-it back to return to the admin UI.
+**Admin/reader view toggle**: once logged in, a button in the nav reads
+**Preview as reader** — click it to flip into reader view without logging
+out. That sets a `viewMode` (in `sessionStorage`, not the login itself)
+that hides every admin-only affordance (the Write pencil icon, "Edit this
+post" links, the review queue), and a persistent, high-contrast banner
+appears across the top of every page ("👁️ Previewing the site as a reader
+would see it — no admin controls are showing.") so it's never ambiguous
+which mode you're in. The nav button itself relabels to **Exit preview**;
+either it or the banner's own **Return to admin view** button flips you
+back.
 
 ## Reader submissions
 
@@ -382,6 +394,13 @@ The chat button in the bottom-right corner (`src/components/ChatWidget.jsx`)
 talks to Claude (Anthropic) through a small serverless proxy at
 `api/chat.js`.
 
+**Graceful hiding when unconfigured**: on mount, the widget calls
+`api/chat-status.js`, which reports whether `ANTHROPIC_API_KEY` is set
+(without exposing the key itself). If it isn't — or the endpoint is
+unreachable — the widget renders nothing at all rather than showing a chat
+button that always fails. Set `ANTHROPIC_API_KEY` in the Vercel project's
+environment variables and redeploy to turn it on; no code change needed.
+
 **Why a backend at all** for the API key: it must never be shipped to the
 browser — anyone could read it out of the JS bundle in devtools and rack up
 usage on it. `api/chat.js` is the one place the key lives; the frontend
@@ -398,7 +417,8 @@ decline questions unrelated to the blog.
 
 **Current limits**: each request caps history to the last 20 messages and
 512 reply tokens, and the widget shows a plain error bubble on any failure
-(missing key, network issue, model error) rather than breaking. There's no
+after it's already open (network issue, model error) rather than breaking —
+a missing key is handled earlier, by not showing the widget at all. There's no
 persistent rate-limiting yet (a stateless serverless function can't cheaply
 track that on its own) — if the widget gets real traffic, put it behind
 Vercel's built-in abuse protection or add a proper store (Upstash Redis,
