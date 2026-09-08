@@ -32,8 +32,19 @@ export function AdminProvider({ children }) {
     sessionStorage.setItem(VIEW_MODE_KEY, mode)
   }
 
+  // Returns the raw response so Login.jsx can branch on
+  // `needsTwoFactor` — isAdmin only flips to true once fully signed in
+  // (immediately here, or via verifyTwoFactor below).
   const login = async (password) => {
-    await api.post('/api/admin/login', { password })
+    const data = await api.post('/api/admin/login', { password })
+    if (data.needsTwoFactor) return data
+    setIsAdmin(true)
+    setViewMode('admin')
+    return data
+  }
+
+  const verifyTwoFactor = async (pendingToken, code) => {
+    await api.post('/api/admin/verify-two-factor', { pendingToken, code })
     setIsAdmin(true)
     setViewMode('admin')
   }
@@ -47,7 +58,17 @@ export function AdminProvider({ children }) {
 
   return (
     <AdminContext.Provider
-      value={{ isAdmin, effectiveIsAdmin, viewMode, setViewMode, loading, login, logout, refresh }}
+      value={{
+        isAdmin,
+        effectiveIsAdmin,
+        viewMode,
+        setViewMode,
+        loading,
+        login,
+        verifyTwoFactor,
+        logout,
+        refresh,
+      }}
     >
       {children}
     </AdminContext.Provider>

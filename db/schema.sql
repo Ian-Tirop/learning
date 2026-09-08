@@ -128,6 +128,15 @@ CREATE TABLE IF NOT EXISTS saved_posts (
 
 CREATE INDEX IF NOT EXISTS saved_posts_account_id_idx ON saved_posts(account_id);
 
+-- Single-row-per-key settings for the one admin account — currently just
+-- two-factor auth state (secret, enabled flag, hashed backup codes). Not
+-- an "accounts" row since there's exactly one admin, gated by
+-- ADMIN_PASSWORD, not a row in `accounts`.
+CREATE TABLE IF NOT EXISTS admin_settings (
+  key text PRIMARY KEY,
+  value text
+);
+
 -- Real, shared newsletter list (was localStorage-only, per-browser, before
 -- this pass — see api/_lib/email.js for the actual send-on-publish logic).
 CREATE TABLE IF NOT EXISTS subscribers (

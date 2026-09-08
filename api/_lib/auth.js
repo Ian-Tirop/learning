@@ -21,8 +21,8 @@ function sign(payload) {
 
 // `subject` is a free-form id carried in the token — 'admin' for the admin
 // session (there's only ever one), an account id for a reader session.
-function createToken(role, subject) {
-  const expires = Date.now() + SESSION_TTL_MS
+function createToken(role, subject, ttlMs = SESSION_TTL_MS) {
+  const expires = Date.now() + ttlMs
   const payload = `${role}.${subject}.${expires}`
   return `${payload}.${sign(payload)}`
 }
@@ -58,6 +58,19 @@ export function createSessionToken() {
 
 export function verifySessionToken(token) {
   return verifyToken(token, 'admin') === 'admin'
+}
+
+const PENDING_2FA_TTL_MS = 1000 * 60 * 5 // 5 minutes — just long enough to type a code
+
+// Issued after a correct password when 2FA is enabled, before the real
+// session cookie is set — proves "this request just supplied the right
+// password" without granting access until the code is verified too.
+export function createPendingTwoFactorToken() {
+  return createToken('admin-2fa-pending', 'admin', PENDING_2FA_TTL_MS)
+}
+
+export function verifyPendingTwoFactorToken(token) {
+  return verifyToken(token, 'admin-2fa-pending') === 'admin'
 }
 
 export function createReaderSessionToken(accountId) {

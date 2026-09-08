@@ -13,6 +13,13 @@
   text-align: left;
 }
 
+.write-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
 .write-intro {
   margin-top: 10px;
   font-size: 15px;

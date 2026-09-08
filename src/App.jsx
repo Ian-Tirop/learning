@@ -9,6 +9,7 @@ import { About } from './pages/About'
 import { Contact } from './pages/Contact'
 import { Submit } from './pages/Submit'
 import { Login } from './pages/admin/Login'
+import { Security } from './pages/admin/Security'
 import { AccountSignup } from './pages/account/AccountSignup'
 import { AccountLogin } from './pages/account/AccountLogin'
 import { ForgotPassword } from './pages/account/ForgotPassword'
@@ -55,6 +56,7 @@ function App() {
                 <Route path="/submit" element={<Submit />} />
                 <Route path="/submit/edit/:slug" element={<Submit />} />
                 <Route path="/admin/login" element={<Login />} />
+                <Route path="/admin/security" element={<Security />} />
                 <Route path="/account/signup" element={<AccountSignup />} />
                 <Route path="/account/login" element={<AccountLogin />} />
                 <Route path="/account/forgot-password" element={<ForgotPassword />} />

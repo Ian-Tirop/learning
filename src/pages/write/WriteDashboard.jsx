@@ -416,9 +416,14 @@ export function WriteDashboard() {
             is the real, shared site content, not a per-browser copy.
           </p>
         </div>
-        <Link to="/write/new" className="btn btn-primary">
-          New post
-        </Link>
+        <div className="write-header-actions">
+          <Link to="/admin/security" className="btn btn-ghost">
+            Security
+          </Link>
+          <Link to="/write/new" className="btn btn-primary">
+            New post
+          </Link>
+        </div>
       </div>
 
       <AnalyticsSection />

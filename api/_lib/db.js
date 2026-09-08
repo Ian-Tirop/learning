@@ -717,3 +717,19 @@ export async function createFeedback({
 export async function markNewsletterSent(slug) {
   await sql`UPDATE posts SET newsletter_sent = true WHERE slug = ${slug}`
 }
+
+export async function getAdminSetting(key) {
+  const rows = await sql`SELECT value FROM admin_settings WHERE key = ${key}`
+  return rows[0]?.value ?? null
+}
+
+export async function setAdminSetting(key, value) {
+  await sql`
+    INSERT INTO admin_settings (key, value) VALUES (${key}, ${value})
+    ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value
+  `
+}
+
+export async function deleteAdminSetting(key) {
+  await sql`DELETE FROM admin_settings WHERE key = ${key}`
+}

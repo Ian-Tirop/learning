@@ -11,3 +11,21 @@ export async function getAnalytics() {
 export async function deleteCommentAsAdmin(id) {
   await api.delete(`/api/comments/${id}`)
 }
+
+export async function getTwoFactorStatus() {
+  return api.get('/api/admin/two-factor-status')
+}
+
+/** Starts setup — returns { secret, qrDataUrl }. Not enabled until confirmed. */
+export async function startTwoFactorSetup() {
+  return api.post('/api/admin/two-factor-setup', {})
+}
+
+/** Confirms setup with a real code — returns { backupCodes } shown once. */
+export async function confirmTwoFactorSetup(code) {
+  return api.post('/api/admin/two-factor-confirm', { code })
+}
+
+export async function disableTwoFactor(code) {
+  return api.post('/api/admin/two-factor-disable', { code })
+}

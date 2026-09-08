@@ -9,10 +9,12 @@ import './Login.css'
 export function Login() {
   useDocumentTitle('Admin login — Ian Tirop')
   useMetaRobots()
-  const { isAdmin, loading, login } = useAdmin()
+  const { isAdmin, loading, login, verifyTwoFactor } = useAdmin()
   const navigate = useNavigate()
 
   const [password, setPassword] = useState('')
+  const [code, setCode] = useState('')
+  const [pendingToken, setPendingToken] = useState(null)
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
@@ -20,18 +22,70 @@ export function Login() {
     return <Navigate to="/write" replace />
   }
 
-  const handleSubmit = async (event) => {
+  const handlePasswordSubmit = async (event) => {
     event.preventDefault()
     setSubmitting(true)
     setError('')
     try {
-      await login(password)
-      navigate('/write')
+      const data = await login(password)
+      if (data.needsTwoFactor) {
+        setPendingToken(data.pendingToken)
+      } else {
+        navigate('/write')
+      }
     } catch (err) {
       setError(err.message || 'Incorrect password.')
     } finally {
       setSubmitting(false)
     }
+  }
+
+  const handleCodeSubmit = async (event) => {
+    event.preventDefault()
+    setSubmitting(true)
+    setError('')
+    try {
+      await verifyTwoFactor(pendingToken, code.trim())
+      navigate('/write')
+    } catch (err) {
+      setError(err.message || 'Incorrect code.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  if (pendingToken) {
+    return (
+      <section className="container login-page">
+        <div className="section-heading">
+          <p className="eyebrow">Admin</p>
+          <h1>Enter your code</h1>
+          <p className="login-intro">From your authenticator app, or a backup code.</p>
+        </div>
+
+        <form className="login-form" onSubmit={handleCodeSubmit}>
+          <label className="field">
+            <span>Code</span>
+            <input
+              type="text"
+              inputMode="text"
+              autoComplete="one-time-code"
+              value={code}
+              onChange={(event) => setCode(event.target.value)}
+              autoFocus
+            />
+          </label>
+          {error && (
+            <p className="comment-error" role="alert">
+              {error}
+            </p>
+          )}
+          <button type="submit" className="btn btn-primary" disabled={submitting}>
+            {submitting ? 'Verifying…' : 'Verify'}
+          </button>
+        </form>
+      </section>
+    )
   }
 
   return (
@@ -42,7 +96,7 @@ export function Login() {
         <p className="login-intro">Only Ian can publish or edit posts directly.</p>
       </div>
 
-      <form className="login-form" onSubmit={handleSubmit}>
+      <form className="login-form" onSubmit={handlePasswordSubmit}>
         <label className="field">
           <span>Password</span>
           <input
