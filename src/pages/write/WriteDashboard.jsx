@@ -11,9 +11,167 @@ import './Write.css'
 
 const STATUS_LABEL = { draft: 'Draft', published: 'Published', pending: 'Pending review', rejected: 'Rejected' }
 
+function statPosts(data, statusFilter) {
+  return data.posts
+    .filter((post) => !statusFilter || post.status === statusFilter)
+    .sort((a, b) => new Date(b.date) - new Date(a.date))
+}
+
+const STAT_DEFS = [
+  { key: 'total', label: 'Total posts', value: (t) => t.posts },
+  { key: 'published', label: 'Published', value: (t) => t.byStatus.published || 0 },
+  { key: 'pending', label: 'Pending review', value: (t) => t.byStatus.pending || 0 },
+  { key: 'rejected', label: 'Rejected', value: (t) => t.byStatus.rejected || 0 },
+  { key: 'draft', label: 'Drafts', value: (t) => t.byStatus.draft || 0 },
+  { key: 'comments', label: 'Comments', value: (t) => t.comments },
+  { key: 'accounts', label: 'Reader accounts', value: (t) => t.accounts },
+  { key: 'subscribers', label: 'Newsletter subscribers', value: (t) => t.subscribers },
+  { key: 'feedback', label: 'Feedback notes', value: (t) => t.feedback },
+  { key: 'likes', label: 'Likes', value: (t) => t.likes },
+  { key: 'dislikes', label: 'Dislikes', value: (t) => t.dislikes },
+  {
+    key: 'rating',
+    label: (t) => `Avg. rating (${t.ratingCount})`,
+    value: (t) => (t.ratingCount > 0 ? t.averageRating.toFixed(1) : '—'),
+  },
+]
+
+function PostDetailList({ posts, emptyMessage }) {
+  if (posts.length === 0) return <p className="write-intro">{emptyMessage}</p>
+  return (
+    <ul className="analytics-list analytics-detail-list">
+      {posts.map((post) => (
+        <li key={post.slug}>
+          <div>
+            <Link to={`/write/${post.slug}`}>{post.title}</Link>
+            <span className={`status-badge ${post.status}`}>{STATUS_LABEL[post.status]}</span>
+          </div>
+          <span>
+            {formatDate(post.date)} · {post.likes} 👍 {post.dislikes} 👎 {post.comments} 💬
+            {post.ratingCount > 0 && ` · ${post.ratingAverage.toFixed(1)} ★ (${post.ratingCount})`}
+          </span>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+function AnalyticsDetail({ activeKey, data }) {
+  if (!activeKey) return null
+
+  const { posts, accounts, subscribers, feedback, recentComments } = data
+
+  let title = ''
+  let body = null
+
+  if (['total', 'published', 'pending', 'rejected', 'draft'].includes(activeKey)) {
+    const statusFilter = activeKey === 'total' ? null : activeKey
+    title = STAT_DEFS.find((s) => s.key === activeKey).label
+    body = <PostDetailList posts={statPosts(data, statusFilter)} emptyMessage="No posts here yet." />
+  } else if (activeKey === 'likes' || activeKey === 'dislikes') {
+    title = activeKey === 'likes' ? 'Posts by likes' : 'Posts by dislikes'
+    const sorted = [...posts].sort((a, b) => b[activeKey] - a[activeKey])
+    body = <PostDetailList posts={sorted} emptyMessage="Nothing published yet." />
+  } else if (activeKey === 'rating') {
+    title = 'Posts by rating'
+    const rated = posts.filter((post) => post.ratingCount > 0).sort((a, b) => b.ratingAverage - a.ratingAverage)
+    body = <PostDetailList posts={rated} emptyMessage="No ratings yet." />
+  } else if (activeKey === 'comments') {
+    title = `Comments (${recentComments.length}${recentComments.length === 50 ? '+' : ''})`
+    body =
+      recentComments.length === 0 ? (
+        <p className="write-intro">No comments yet.</p>
+      ) : (
+        <ul className="analytics-list recent-comments-list">
+          {recentComments.map((comment) => (
+            <li key={comment.id}>
+              <div>
+                <strong>{comment.name}</strong> on{' '}
+                <Link to={`/blog/${comment.postSlug}`}>{comment.postTitle}</Link>
+                <p>{comment.text}</p>
+              </div>
+              <span>{formatDate(comment.createdAt)}</span>
+            </li>
+          ))}
+        </ul>
+      )
+  } else if (activeKey === 'accounts') {
+    title = 'Reader accounts'
+    body =
+      accounts.length === 0 ? (
+        <p className="write-intro">No reader accounts yet.</p>
+      ) : (
+        <ul className="analytics-list analytics-detail-list">
+          {accounts.map((account) => (
+            <li key={account.id}>
+              <div>
+                <strong>{account.displayName}</strong>
+                <span className="analytics-detail-sub">{account.email}</span>
+              </div>
+              <span>
+                {account.postCount} {account.postCount === 1 ? 'post' : 'posts'} · joined{' '}
+                {formatDate(account.createdAt)}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )
+  } else if (activeKey === 'subscribers') {
+    title = 'Newsletter subscribers'
+    body =
+      subscribers.length === 0 ? (
+        <p className="write-intro">No subscribers yet.</p>
+      ) : (
+        <ul className="analytics-list analytics-detail-list">
+          {subscribers.map((sub) => (
+            <li key={sub.email}>
+              <span>{sub.email}</span>
+              <span>Subscribed {formatDate(sub.subscribedAt)}</span>
+            </li>
+          ))}
+        </ul>
+      )
+  } else if (activeKey === 'feedback') {
+    title = 'Reader feedback'
+    body =
+      feedback.length === 0 ? (
+        <p className="write-intro">No feedback yet.</p>
+      ) : (
+        <ul className="analytics-list recent-comments-list">
+          {feedback.map((note) => (
+            <li key={note.id}>
+              <div>
+                <strong>{note.name || 'Anonymous'}</strong>
+                {note.email && <span className="analytics-detail-sub"> ({note.email})</span>}
+                <p>{note.message}</p>
+                {note.interests.length > 0 && (
+                  <p className="analytics-detail-sub">Interested in: {note.interests.join(', ')}</p>
+                )}
+                {note.wantsToWrite && note.wantsToWrite !== 'no' && (
+                  <p className="analytics-detail-sub">
+                    Wants to write{note.writeNote ? `: ${note.writeNote}` : '.'}
+                  </p>
+                )}
+              </div>
+              <span>{formatDate(note.createdAt)}</span>
+            </li>
+          ))}
+        </ul>
+      )
+  }
+
+  return (
+    <div className="analytics-detail">
+      <h3>{title}</h3>
+      {body}
+    </div>
+  )
+}
+
 function AnalyticsSection() {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [activeKey, setActiveKey] = useState(null)
 
   useEffect(() => {
     getAnalytics()
@@ -32,60 +190,35 @@ function AnalyticsSection() {
 
   if (!data) return null
 
-  const { totals, topLiked, topCommented, topRated, recentComments } = data
+  const { totals, topLiked, topCommented, topRated } = data
+
+  const toggleActive = (key) => setActiveKey((current) => (current === key ? null : key))
 
   return (
     <div className="analytics-section">
       <h2>Analytics</h2>
       <p className="write-intro">
-        Real numbers from your database — engagement, review queue, and reader accounts. There's no
-        page-view tracking on this site, so this won&apos;t show visits or traffic.
+        Real numbers from your database — engagement, review queue, reader accounts, subscribers, and
+        feedback. There&apos;s no page-view tracking on this site, so this won&apos;t show visits or
+        traffic. Click any card for the full list.
       </p>
 
       <div className="analytics-grid">
-        <div className="stat-card">
-          <span className="stat-value">{totals.posts}</span>
-          <span className="stat-label">Total posts</span>
-        </div>
-        <div className="stat-card">
-          <span className="stat-value">{totals.byStatus.published || 0}</span>
-          <span className="stat-label">Published</span>
-        </div>
-        <div className="stat-card">
-          <span className="stat-value">{totals.byStatus.pending || 0}</span>
-          <span className="stat-label">Pending review</span>
-        </div>
-        <div className="stat-card">
-          <span className="stat-value">{totals.byStatus.rejected || 0}</span>
-          <span className="stat-label">Rejected</span>
-        </div>
-        <div className="stat-card">
-          <span className="stat-value">{totals.byStatus.draft || 0}</span>
-          <span className="stat-label">Drafts</span>
-        </div>
-        <div className="stat-card">
-          <span className="stat-value">{totals.comments}</span>
-          <span className="stat-label">Comments</span>
-        </div>
-        <div className="stat-card">
-          <span className="stat-value">{totals.accounts}</span>
-          <span className="stat-label">Reader accounts</span>
-        </div>
-        <div className="stat-card">
-          <span className="stat-value">{totals.likes}</span>
-          <span className="stat-label">Likes</span>
-        </div>
-        <div className="stat-card">
-          <span className="stat-value">{totals.dislikes}</span>
-          <span className="stat-label">Dislikes</span>
-        </div>
-        <div className="stat-card">
-          <span className="stat-value">
-            {totals.ratingCount > 0 ? totals.averageRating.toFixed(1) : '—'}
-          </span>
-          <span className="stat-label">Avg. rating ({totals.ratingCount})</span>
-        </div>
+        {STAT_DEFS.map((stat) => (
+          <button
+            key={stat.key}
+            type="button"
+            className={`stat-card${activeKey === stat.key ? ' active' : ''}`}
+            onClick={() => toggleActive(stat.key)}
+            aria-pressed={activeKey === stat.key}
+          >
+            <span className="stat-value">{stat.value(totals)}</span>
+            <span className="stat-label">{typeof stat.label === 'function' ? stat.label(totals) : stat.label}</span>
+          </button>
+        ))}
       </div>
+
+      <AnalyticsDetail activeKey={activeKey} data={data} />
 
       <div className="analytics-columns">
         <div className="analytics-column">
@@ -129,24 +262,6 @@ function AnalyticsSection() {
           </ul>
         </div>
       </div>
-
-      {recentComments.length > 0 && (
-        <div className="analytics-column recent-comments">
-          <h3>Recent comments</h3>
-          <ul className="analytics-list recent-comments-list">
-            {recentComments.map((comment) => (
-              <li key={comment.id}>
-                <div>
-                  <strong>{comment.name}</strong> on{' '}
-                  <Link to={`/blog/${comment.postSlug}`}>{comment.postTitle}</Link>
-                  <p>{comment.text}</p>
-                </div>
-                <span>{formatDate(comment.createdAt)}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
     </div>
   )
 }

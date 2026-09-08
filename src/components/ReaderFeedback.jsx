@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useLocalStorage } from '../hooks/useLocalStorage'
+import { sendFeedback } from '../data/inboxStore'
 import { posts } from '../data/posts'
 import './ReaderFeedback.css'
 
@@ -11,11 +11,6 @@ const WRITE_OPTIONS = [
   { value: 'no', label: 'Not right now' },
 ]
 
-function makeId() {
-  if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID()
-  return `${Date.now()}-${Math.random().toString(16).slice(2)}`
-}
-
 const emptyForm = {
   name: '',
   email: '',
@@ -26,9 +21,9 @@ const emptyForm = {
 }
 
 export function ReaderFeedback() {
-  const [submissions, setSubmissions] = useLocalStorage('blog:readerFeedback', [])
   const [form, setForm] = useState(emptyForm)
   const [error, setError] = useState('')
+  const [saving, setSaving] = useState(false)
   const [justSubmitted, setJustSubmitted] = useState(false)
 
   const updateField = (field, value) => setForm((prev) => ({ ...prev, [field]: value }))
@@ -42,7 +37,7 @@ export function ReaderFeedback() {
     }))
   }
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault()
     const message = form.message.trim()
 
@@ -51,14 +46,18 @@ export function ReaderFeedback() {
       return
     }
 
-    setSubmissions((prev) => [
-      { id: makeId(), date: new Date().toISOString(), ...form, name: form.name.trim(), message },
-      ...prev,
-    ])
-    setForm(emptyForm)
+    setSaving(true)
     setError('')
-    setJustSubmitted(true)
-    setTimeout(() => setJustSubmitted(false), 4000)
+    try {
+      await sendFeedback({ ...form, name: form.name.trim(), message })
+      setForm(emptyForm)
+      setJustSubmitted(true)
+      setTimeout(() => setJustSubmitted(false), 4000)
+    } catch (err) {
+      setError(err.message || 'Could not send that right now.')
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -160,8 +159,8 @@ export function ReaderFeedback() {
         )}
 
         <div className="reader-feedback-submit">
-          <button type="submit" className="btn btn-primary">
-            Send feedback
+          <button type="submit" className="btn btn-primary" disabled={saving}>
+            {saving ? 'Sending…' : 'Send feedback'}
           </button>
           {justSubmitted && (
             <span className="reader-feedback-thanks" role="status">
@@ -170,13 +169,6 @@ export function ReaderFeedback() {
           )}
         </div>
       </form>
-
-      {submissions.length > 0 && (
-        <p className="reader-feedback-history">
-          You&apos;ve sent {submissions.length} {submissions.length === 1 ? 'note' : 'notes'} from this
-          browser.
-        </p>
-      )}
     </div>
   )
 }

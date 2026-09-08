@@ -1,5 +1,12 @@
-import { getPostBySlug, updatePostRow, deletePostRow } from '../_lib/db.js'
+import {
+  getPostBySlug,
+  updatePostRow,
+  deletePostRow,
+  getAllSubscriberEmails,
+  markNewsletterSent,
+} from '../_lib/db.js'
 import { isAdminRequest, requireAdmin, safeEqual, getReaderAccountId } from '../_lib/auth.js'
+import { sendPublishNotification } from '../_lib/email.js'
 import { withErrorHandling } from '../_lib/http.js'
 
 async function handler(req, res) {
@@ -63,6 +70,15 @@ async function handler(req, res) {
         fields.status = body.status
       }
       const updated = await updatePostRow(slug, fields)
+
+      // Only the first time a post goes live — an edit-then-republish
+      // cycle (see the reader-edit branch below) never re-notifies.
+      if (updated.status === 'published' && post.status !== 'published' && !updated.newsletterSent) {
+        const emails = await getAllSubscriberEmails()
+        const { sent } = await sendPublishNotification(updated, emails)
+        if (sent) await markNewsletterSent(updated.slug)
+      }
+
       res.status(200).json({ post: updated })
       return
     }

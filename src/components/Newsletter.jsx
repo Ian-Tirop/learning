@@ -1,14 +1,14 @@
 import { useState } from 'react'
-import { useLocalStorage } from '../hooks/useLocalStorage'
+import { subscribe } from '../data/inboxStore'
 import './Newsletter.css'
 
 export function Newsletter() {
-  const [subscribers, setSubscribers] = useLocalStorage('blog:subscribers', [])
   const [email, setEmail] = useState('')
   const [error, setError] = useState('')
   const [subscribed, setSubscribed] = useState(false)
+  const [saving, setSaving] = useState(false)
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault()
     const trimmed = email.trim()
 
@@ -17,10 +17,17 @@ export function Newsletter() {
       return
     }
 
-    setSubscribers((prev) => (prev.includes(trimmed) ? prev : [...prev, trimmed]))
-    setEmail('')
+    setSaving(true)
     setError('')
-    setSubscribed(true)
+    try {
+      await subscribe(trimmed)
+      setEmail('')
+      setSubscribed(true)
+    } catch (err) {
+      setError(err.message || 'Could not subscribe right now.')
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -36,7 +43,7 @@ export function Newsletter() {
 
         {subscribed ? (
           <p className="newsletter-thanks" role="status">
-            You&apos;re on the list for this browser. Thanks for reading.
+            You&apos;re on the list. Thanks for reading.
           </p>
         ) : (
           <form className="newsletter-form" onSubmit={handleSubmit} noValidate>
@@ -47,20 +54,14 @@ export function Newsletter() {
               placeholder="you@example.com"
               aria-label="Email address"
             />
-            <button type="submit" className="btn btn-primary">
-              Subscribe
+            <button type="submit" className="btn btn-primary" disabled={saving}>
+              {saving ? 'Subscribing…' : 'Subscribe'}
             </button>
           </form>
         )}
         {error && (
           <p className="newsletter-error" role="alert">
             {error}
-          </p>
-        )}
-        {subscribers.length > 0 && !subscribed && (
-          <p className="newsletter-count">
-            Already subscribed on this browser ({subscribers.length}{' '}
-            {subscribers.length === 1 ? 'address' : 'addresses'}).
           </p>
         )}
       </div>

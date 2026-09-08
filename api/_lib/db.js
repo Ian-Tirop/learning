@@ -52,6 +52,7 @@ function mapPostRow(row) {
     submittedByEmail: row.submitted_by_email || undefined,
     reviewNote: row.review_note || undefined,
     authorAccountId: row.author_account_id || null,
+    newsletterSent: Boolean(row.newsletter_sent),
     seed: {
       likes: row.seed_likes + Number(row.reaction_likes || 0),
       dislikes: row.seed_dislikes + Number(row.reaction_dislikes || 0),
@@ -431,18 +432,28 @@ export async function updateAccountPassword(id, passwordHash) {
 // the database. Reuses getAllPostsForAdmin's already-correct seed+live
 // aggregation instead of re-deriving likes/ratings in raw SQL.
 export async function getSiteAnalytics() {
-  const [allPosts, commentCountRows, totalCommentsRows, accountCountRows, recentComments] = await Promise.all([
+  const [
+    allPosts,
+    commentCountRows,
+    totalCommentsRows,
+    accounts,
+    recentComments,
+    subscribers,
+    feedback,
+  ] = await Promise.all([
     getAllPostsForAdmin(null),
     sql`SELECT post_slug, COUNT(*)::int AS count FROM comments GROUP BY post_slug`,
     sql`SELECT COUNT(*)::int AS count FROM comments`,
-    sql`SELECT COUNT(*)::int AS count FROM accounts`,
+    sql`SELECT id, email, display_name, created_at FROM accounts ORDER BY created_at DESC`,
     sql`
       SELECT c.id, c.name, c.body, c.post_slug, c.created_at, p.title AS post_title
       FROM comments c
       JOIN posts p ON p.slug = c.post_slug
       ORDER BY c.created_at DESC
-      LIMIT 8
+      LIMIT 50
     `,
+    sql`SELECT email, subscribed_at FROM subscribers ORDER BY subscribed_at DESC`,
+    sql`SELECT * FROM feedback ORDER BY created_at DESC`,
   ])
 
   const commentCountBySlug = Object.fromEntries(commentCountRows.map((row) => [row.post_slug, row.count]))
@@ -458,6 +469,12 @@ export async function getSiteAnalytics() {
     dislikes += post.seed.dislikes
     ratingSum += post.seed.ratingSum
     ratingCount += post.seed.ratingCount
+  }
+
+  const postCountByAccount = {}
+  for (const post of allPosts) {
+    if (!post.authorAccountId) continue
+    postCountByAccount[post.authorAccountId] = (postCountByAccount[post.authorAccountId] || 0) + 1
   }
 
   const published = allPosts.filter((post) => post.status === 'published')
@@ -488,15 +505,38 @@ export async function getSiteAnalytics() {
       posts: allPosts.length,
       byStatus,
       comments: totalCommentsRows[0].count,
-      accounts: accountCountRows[0].count,
+      accounts: accounts.length,
       likes,
       dislikes,
       averageRating: ratingCount > 0 ? ratingSum / ratingCount : 0,
       ratingCount,
+      subscribers: subscribers.length,
+      feedback: feedback.length,
     },
     topLiked,
     topCommented,
     topRated,
+    // Full lists (not just top 5) — the frontend uses these for the
+    // click-to-drill-down detail view on each stat card.
+    posts: allPosts.map((post) => ({
+      slug: post.slug,
+      title: post.title,
+      status: post.status,
+      date: post.date,
+      submittedByName: post.submittedByName,
+      likes: post.seed.likes,
+      dislikes: post.seed.dislikes,
+      ratingAverage: post.seed.ratingCount > 0 ? post.seed.ratingSum / post.seed.ratingCount : 0,
+      ratingCount: post.seed.ratingCount,
+      comments: commentCountBySlug[post.slug] || 0,
+    })),
+    accounts: accounts.map((row) => ({
+      id: row.id,
+      email: row.email,
+      displayName: row.display_name,
+      createdAt: row.created_at,
+      postCount: postCountByAccount[row.id] || 0,
+    })),
     recentComments: recentComments.map((row) => ({
       id: row.id,
       name: row.name,
@@ -505,5 +545,46 @@ export async function getSiteAnalytics() {
       postTitle: row.post_title,
       createdAt: row.created_at,
     })),
+    subscribers: subscribers.map((row) => ({ email: row.email, subscribedAt: row.subscribed_at })),
+    feedback: feedback.map((row) => ({
+      id: row.id,
+      name: row.name,
+      email: row.email,
+      interests: row.interests || [],
+      wantsToWrite: row.wants_to_write,
+      writeNote: row.write_note,
+      message: row.message,
+      createdAt: row.created_at,
+    })),
   }
+}
+
+export async function createSubscriber(email) {
+  await sql`
+    INSERT INTO subscribers (email) VALUES (${email})
+    ON CONFLICT (email) DO NOTHING
+  `
+}
+
+export async function getAllSubscriberEmails() {
+  const rows = await sql`SELECT email FROM subscribers`
+  return rows.map((row) => row.email)
+}
+
+export async function deleteSubscriber(email) {
+  await sql`DELETE FROM subscribers WHERE email = ${email}`
+}
+
+export async function createFeedback({ id, name, email, interests, wantsToWrite, writeNote, message }) {
+  await sql`
+    INSERT INTO feedback (id, name, email, interests, wants_to_write, write_note, message)
+    VALUES (
+      ${id}, ${name || null}, ${email || null}, ${interests || []}::text[],
+      ${wantsToWrite || null}, ${writeNote || null}, ${message}
+    )
+  `
+}
+
+export async function markNewsletterSent(slug) {
+  await sql`UPDATE posts SET newsletter_sent = true WHERE slug = ${slug}`
 }

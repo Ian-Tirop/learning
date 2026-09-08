@@ -1,5 +1,13 @@
-import { getPublishedPosts, getAllPostsForAdmin, createPost, getAccountById } from '../_lib/db.js'
+import {
+  getPublishedPosts,
+  getAllPostsForAdmin,
+  createPost,
+  getAccountById,
+  getAllSubscriberEmails,
+  markNewsletterSent,
+} from '../_lib/db.js'
 import { isAdminRequest, getReaderAccountId } from '../_lib/auth.js'
+import { sendPublishNotification } from '../_lib/email.js'
 import { withErrorHandling } from '../_lib/http.js'
 import { slugify } from '../../src/lib/slugify.js'
 import { estimateReadingTime } from '../../src/lib/estimateReadingTime.js'
@@ -94,6 +102,13 @@ async function handler(req, res) {
 
     try {
       const created = await createPost(post)
+
+      if (created.status === 'published' && !created.newsletterSent) {
+        const emails = await getAllSubscriberEmails()
+        const { sent } = await sendPublishNotification(created, emails)
+        if (sent) await markNewsletterSent(created.slug)
+      }
+
       res.status(201).json({
         post: created,
         editToken: admin ? undefined : post.editToken,
