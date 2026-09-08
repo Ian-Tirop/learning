@@ -3,12 +3,14 @@ import { Link, Navigate } from 'react-router-dom'
 import { deletePost, getAllPosts, updatePost } from '../../data/postStore'
 import { getAnalytics, deleteCommentAsAdmin } from '../../data/adminStore'
 import { PostCover } from '../../components/PostCover'
+import { SecurityPanel } from '../admin/SecurityPanel'
 import { useDocumentTitle } from '../../hooks/useDocumentTitle'
 import { useMetaRobots } from '../../hooks/useMetaRobots'
 import { useAdmin } from '../../context/AdminContext'
 import { useToast } from '../../context/ToastContext'
 import { useCountUp } from '../../hooks/useCountUp'
 import { formatDate } from '../../lib/formatDate'
+import '../account/Account.css'
 import './Write.css'
 
 function StatValue({ value }) {
@@ -308,68 +310,87 @@ function AnalyticsBody({ data }) {
   )
 }
 
-// Collapsed by default — the full grid + leaderboards made /write very
-// long, and most visits here are to work the review queue, not to check
-// analytics. Data is only fetched the first time it's expanded.
-function AnalyticsSection() {
-  const [open, setOpen] = useState(false)
-  const [data, setData] = useState(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(false)
+function OverviewPanel({ analytics, pendingCount, onGoToReview }) {
+  if (!analytics) return <p className="loading-note">Loading…</p>
 
-  const handleToggle = () => {
-    setOpen((current) => !current)
-    if (!data && !loading) {
-      setLoading(true)
-      getAnalytics()
-        .then(setData)
-        .catch(() => setError(true))
-        .finally(() => setLoading(false))
-    }
-  }
+  const { recentComments, trending } = analytics
 
   return (
-    <div className="analytics-section">
-      <button
-        type="button"
-        className="analytics-toggle"
-        onClick={handleToggle}
-        aria-expanded={open}
-      >
-        <h2>Analytics</h2>
-        <svg className={`icon chevron${open ? ' open' : ''}`} role="presentation" aria-hidden="true">
-          <use href="/icons.svg#chevron-icon"></use>
-        </svg>
-      </button>
-
-      {open && (
-        <div className="analytics-body">
-          {loading && <p className="loading-note">Loading analytics…</p>}
-          {!loading && error && <p className="write-intro">Could not load analytics right now.</p>}
-          {!loading && data && <AnalyticsBody data={data} />}
-        </div>
+    <>
+      {pendingCount > 0 && (
+        <button type="button" className="overview-callout" onClick={onGoToReview}>
+          <strong>
+            {pendingCount} {pendingCount === 1 ? 'submission' : 'submissions'}
+          </strong>{' '}
+          waiting for your review →
+        </button>
       )}
-    </div>
+
+      <div className="analytics-columns">
+        <div className="analytics-column">
+          <h3>Trending this week</h3>
+          <p className="body-hint">By comment activity in the last 7 days.</p>
+          {trending.length === 0 && <p className="write-intro">Nothing this week yet.</p>}
+          <ul className="analytics-list">
+            {trending.map((post) => (
+              <li key={post.slug}>
+                <Link to={`/blog/${post.slug}`}>{post.title}</Link>
+                <span>{post.comments} 💬</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="analytics-column recent-comments">
+          <h3>Recent comments</h3>
+          {recentComments.length === 0 && <p className="write-intro">No comments yet.</p>}
+          <ul className="analytics-list recent-comments-list">
+            {recentComments.slice(0, 6).map((comment) => (
+              <li key={comment.id}>
+                <div>
+                  <strong>{comment.name}</strong> on{' '}
+                  <Link to={`/blog/${comment.postSlug}`}>{comment.postTitle}</Link>
+                  <p>{comment.text}</p>
+                </div>
+                <span>{formatDate(comment.createdAt)}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </>
   )
 }
+
+const TABS = [
+  { key: 'overview', label: 'Overview', icon: 'grid-icon' },
+  { key: 'review', label: 'Review queue', icon: 'check-icon' },
+  { key: 'posts', label: 'All posts', icon: 'folder-icon' },
+  { key: 'analytics', label: 'Analytics', icon: 'network-icon' },
+  { key: 'security', label: 'Security', icon: 'user-icon' },
+]
 
 export function WriteDashboard() {
   useDocumentTitle('Write — Ian Tirop')
   useMetaRobots()
-  const { isAdmin, loading: authLoading } = useAdmin()
+  const { isAdmin, loading: authLoading, logout } = useAdmin()
   const showToast = useToast()
 
   const [posts, setPosts] = useState([])
   const [loading, setLoading] = useState(true)
+  const [analytics, setAnalytics] = useState(null)
   const [confirmingSlug, setConfirmingSlug] = useState(null)
   const [reviewNoteFor, setReviewNoteFor] = useState(null)
   const [reviewNote, setReviewNote] = useState('')
+  const [activeTab, setActiveTab] = useState('overview')
 
   const refresh = () => {
     setLoading(true)
-    getAllPosts({ all: true })
-      .then(setPosts)
-      .catch(() => setPosts([]))
+    Promise.all([getAllPosts({ all: true }).catch(() => []), getAnalytics().catch(() => null)])
+      .then(([allPosts, analyticsData]) => {
+        setPosts(allPosts)
+        setAnalytics(analyticsData)
+      })
       .finally(() => setLoading(false))
   }
 
@@ -403,34 +424,79 @@ export function WriteDashboard() {
   }
 
   const pending = posts.filter((post) => post.status === 'pending')
-  const rest = posts.filter((post) => post.status !== 'pending')
 
   return (
-    <section className="container write-page">
-      <div className="write-header">
-        <div>
-          <p className="eyebrow">Write</p>
-          <h1>Your posts</h1>
+    <section className="container write-page profile-page">
+      <div className="profile-header">
+        <div className="profile-avatar" aria-hidden="true">
+          IT
+        </div>
+        <div className="profile-header-info">
+          <p className="eyebrow">Admin</p>
+          <h1>Ian Tirop</h1>
           <p className="write-intro">
-            {loading ? 'Loading…' : `${posts.length} ${posts.length === 1 ? 'post' : 'posts'}`} — this
-            is the real, shared site content, not a per-browser copy.
+            {loading ? 'Loading…' : `${posts.length} ${posts.length === 1 ? 'post' : 'posts'}`} — the
+            real, shared site content, not a per-browser copy.
           </p>
         </div>
         <div className="write-header-actions">
-          <Link to="/admin/security" className="btn btn-ghost">
-            Security
-          </Link>
           <Link to="/write/new" className="btn btn-primary">
             New post
           </Link>
+          <button type="button" className="btn btn-ghost" onClick={logout}>
+            Log out
+          </button>
         </div>
       </div>
 
-      <AnalyticsSection />
+      <div className="analytics-grid profile-stats">
+        <button type="button" className="stat-card" onClick={() => setActiveTab('posts')}>
+          <StatValue value={analytics?.totals.posts ?? posts.length} />
+          <span className="stat-label">Total posts</span>
+        </button>
+        <button type="button" className="stat-card" onClick={() => setActiveTab('review')}>
+          <StatValue value={analytics?.totals.byStatus.pending ?? pending.length} />
+          <span className="stat-label">Pending review</span>
+        </button>
+        <button type="button" className="stat-card" onClick={() => setActiveTab('analytics')}>
+          <StatValue value={analytics?.totals.comments ?? 0} />
+          <span className="stat-label">Comments</span>
+        </button>
+        <button type="button" className="stat-card" onClick={() => setActiveTab('analytics')}>
+          <StatValue value={analytics?.totals.accounts ?? 0} />
+          <span className="stat-label">Reader accounts</span>
+        </button>
+      </div>
 
-      {pending.length > 0 && (
-        <div className="write-pending">
-          <h2>Pending review ({pending.length})</h2>
+      <div className="profile-tabs" role="tablist">
+        {TABS.map((tab) => (
+          <button
+            key={tab.key}
+            type="button"
+            role="tab"
+            aria-selected={activeTab === tab.key}
+            className={`profile-tab${activeTab === tab.key ? ' active' : ''}`}
+            onClick={() => setActiveTab(tab.key)}
+          >
+            <svg className="icon" role="presentation" aria-hidden="true">
+              <use href={`/icons.svg#${tab.icon}`}></use>
+            </svg>
+            {tab.label}
+            {tab.key === 'review' && pending.length > 0 && <span className="tab-badge">{pending.length}</span>}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === 'overview' && (
+        <div className="profile-panel">
+          <OverviewPanel analytics={analytics} pendingCount={pending.length} onGoToReview={() => setActiveTab('review')} />
+        </div>
+      )}
+
+      {activeTab === 'review' && (
+        <div className="profile-panel">
+          <h2 className="profile-section-title">Pending review ({pending.length})</h2>
+          {pending.length === 0 && <p className="write-intro">Nothing waiting on you right now.</p>}
           <ul className="write-list">
             {pending.map((post) => (
               <li key={post.slug} className="write-row">
@@ -498,61 +564,82 @@ export function WriteDashboard() {
         </div>
       )}
 
-      <ul className="write-list">
-        {rest.map((post) => (
-          <li key={post.slug} className="write-row">
-            <PostCover cover={post.cover} size="thumb" />
-            <div className="write-row-main">
-              <div className="write-row-title">
-                <h2>{post.title}</h2>
-                <span className={`status-badge ${post.status}`}>{STATUS_LABEL[post.status]}</span>
-              </div>
-              <p className="write-row-meta">
-                {formatDate(post.date)}
-                {' · '}
-                {post.readingTime} min read
-                {post.submittedByName && ` · submitted by ${post.submittedByName}`}
-                {post.submittedByEmail && ` (${post.submittedByEmail})`}
-                {post.status === 'rejected' && post.reviewNote && ` · note: ${post.reviewNote}`}
-              </p>
-            </div>
-            <div className="write-row-actions">
-              <Link to={`/blog/${post.slug}`} className="comment-action-btn">
-                Preview
-              </Link>
-              <Link to={`/write/${post.slug}`} className="comment-action-btn">
-                Edit
-              </Link>
-              {confirmingSlug === post.slug ? (
-                <span className="delete-confirm">
-                  <button
-                    type="button"
-                    className="comment-action-btn danger"
-                    onClick={() => handleDelete(post.slug)}
-                  >
-                    Confirm delete
-                  </button>
-                  <button
-                    type="button"
-                    className="comment-action-btn"
-                    onClick={() => setConfirmingSlug(null)}
-                  >
-                    Cancel
-                  </button>
-                </span>
-              ) : (
-                <button
-                  type="button"
-                  className="comment-action-btn danger"
-                  onClick={() => setConfirmingSlug(post.slug)}
-                >
-                  Delete
-                </button>
-              )}
-            </div>
-          </li>
-        ))}
-      </ul>
+      {activeTab === 'posts' && (
+        <div className="profile-panel">
+          <h2 className="profile-section-title">All posts ({posts.length})</h2>
+          <p className="write-intro">Every post regardless of status — drafts, scheduled, published, rejected, and pending.</p>
+          <ul className="write-list">
+            {posts.map((post) => (
+              <li key={post.slug} className="write-row">
+                <PostCover cover={post.cover} size="thumb" />
+                <div className="write-row-main">
+                  <div className="write-row-title">
+                    <h2>{post.title}</h2>
+                    <span className={`status-badge ${post.status}`}>{STATUS_LABEL[post.status]}</span>
+                  </div>
+                  <p className="write-row-meta">
+                    {formatDate(post.date)}
+                    {' · '}
+                    {post.readingTime} min read
+                    {post.submittedByName && ` · submitted by ${post.submittedByName}`}
+                    {post.submittedByEmail && ` (${post.submittedByEmail})`}
+                    {post.status === 'rejected' && post.reviewNote && ` · note: ${post.reviewNote}`}
+                  </p>
+                </div>
+                <div className="write-row-actions">
+                  <Link to={`/blog/${post.slug}`} className="comment-action-btn">
+                    Preview
+                  </Link>
+                  <Link to={`/write/${post.slug}`} className="comment-action-btn">
+                    Edit
+                  </Link>
+                  {confirmingSlug === post.slug ? (
+                    <span className="delete-confirm">
+                      <button
+                        type="button"
+                        className="comment-action-btn danger"
+                        onClick={() => handleDelete(post.slug)}
+                      >
+                        Confirm delete
+                      </button>
+                      <button
+                        type="button"
+                        className="comment-action-btn"
+                        onClick={() => setConfirmingSlug(null)}
+                      >
+                        Cancel
+                      </button>
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      className="comment-action-btn danger"
+                      onClick={() => setConfirmingSlug(post.slug)}
+                    >
+                      Delete
+                    </button>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {activeTab === 'analytics' && (
+        <div className="profile-panel">
+          <h2 className="profile-section-title">Analytics</h2>
+          {!analytics && <p className="loading-note">Loading analytics…</p>}
+          {analytics && <AnalyticsBody data={analytics} />}
+        </div>
+      )}
+
+      {activeTab === 'security' && (
+        <div className="profile-panel">
+          <h2 className="profile-section-title">Security</h2>
+          <SecurityPanel />
+        </div>
+      )}
     </section>
   )
 }
