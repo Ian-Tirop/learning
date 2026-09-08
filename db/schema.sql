@@ -37,6 +37,8 @@ CREATE TABLE IF NOT EXISTS posts (
   author_account_id text REFERENCES accounts(id) ON DELETE SET NULL,
   newsletter_sent boolean NOT NULL DEFAULT false,
   scheduled_at timestamptz,
+  series_name text,
+  series_order int,
   seed_likes int NOT NULL DEFAULT 0,
   seed_dislikes int NOT NULL DEFAULT 0,
   seed_rating_sum int NOT NULL DEFAULT 0,
@@ -52,6 +54,10 @@ CREATE TABLE IF NOT EXISTS posts (
 ALTER TABLE posts ADD COLUMN IF NOT EXISTS author_account_id text REFERENCES accounts(id) ON DELETE SET NULL;
 ALTER TABLE posts ADD COLUMN IF NOT EXISTS newsletter_sent boolean NOT NULL DEFAULT false;
 ALTER TABLE posts ADD COLUMN IF NOT EXISTS scheduled_at timestamptz;
+ALTER TABLE posts ADD COLUMN IF NOT EXISTS series_name text;
+ALTER TABLE posts ADD COLUMN IF NOT EXISTS series_order int;
+
+CREATE INDEX IF NOT EXISTS posts_series_name_idx ON posts(series_name);
 
 -- The CHECK constraint above only applies on a fresh CREATE TABLE — the
 -- already-deployed database needs its existing constraint swapped out to
@@ -139,5 +145,12 @@ CREATE TABLE IF NOT EXISTS feedback (
   wants_to_write text,
   write_note text,
   message text NOT NULL,
+  post_slug text,
+  post_title text,
   created_at timestamptz NOT NULL DEFAULT now()
 );
+
+-- Lets "Suggest an edit" (a per-post feedback note) share this same table
+-- and admin view rather than needing its own.
+ALTER TABLE feedback ADD COLUMN IF NOT EXISTS post_slug text;
+ALTER TABLE feedback ADD COLUMN IF NOT EXISTS post_title text;

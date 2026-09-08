@@ -1,0 +1,29 @@
+.listen-button-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0 0;
+}
+
+.listen-stop-btn {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: none;
+  color: var(--text);
+  cursor: pointer;
+  transition: color 0.2s var(--ease), border-color 0.2s var(--ease);
+
+  .icon {
+    width: 14px;
+    height: 14px;
+  }
+
+  &:hover {
+    color: var(--danger);
+    border-color: var(--danger-border);
+  }
+}

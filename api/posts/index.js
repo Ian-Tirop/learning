@@ -23,11 +23,16 @@ async function handler(req, res) {
     const visitorId = req.query?.visitorId || null
     const posts =
       wantsAll && admin ? await getAllPostsForAdmin(visitorId) : await getPublishedPosts(visitorId)
-    // submittedByEmail is only ever meant for Ian's eyes in the review
-    // queue — strip it from anything a public/non-admin request sees.
+    // submittedByEmail, authorAccountId, and newsletterSent are only ever
+    // meant for Ian's eyes (review queue / internal bookkeeping) — strip
+    // them from anything a public/non-admin request sees. This is also
+    // the site's public-facing post API, so keep it to fields an outside
+    // reader/tool actually needs.
     if (!admin) {
       posts.forEach((post) => {
         delete post.submittedByEmail
+        delete post.authorAccountId
+        delete post.newsletterSent
       })
     }
     res.status(200).json({ posts })

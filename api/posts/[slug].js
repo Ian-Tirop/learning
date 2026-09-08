@@ -26,9 +26,14 @@ async function handler(req, res) {
     }
 
     if (post.status === 'published' || admin) {
-      // submittedByEmail is only ever meant for Ian's eyes in the review
-      // queue — strip it from anything a public/non-admin request sees.
-      if (!admin) delete post.submittedByEmail
+      // submittedByEmail, authorAccountId, and newsletterSent are only
+      // ever meant for Ian's eyes — strip them from anything a public/
+      // non-admin request sees, same reasoning as the list endpoint.
+      if (!admin) {
+        delete post.submittedByEmail
+        delete post.authorAccountId
+        delete post.newsletterSent
+      }
       res.status(200).json({ post })
       return
     }

@@ -97,6 +97,13 @@
       <path d="M6.3 8.9 13.7 5.6M6.3 11.1l7.4 3.3"/>
     </g>
   </symbol>
+  <symbol id="speaker-icon" viewBox="0 0 20 20">
+    <path fill="currentColor" d="M3 8v4h3.2L10 15.5v-11L6.2 8H3Z"/>
+    <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.4" d="M13 7.2a4 4 0 0 1 0 5.6M15.3 5a7.4 7.4 0 0 1 0 10"/>
+  </symbol>
+  <symbol id="pause-icon" viewBox="0 0 20 20">
+    <path fill="currentColor" d="M6 4.5h2.6v11H6zM11.4 4.5H14v11h-2.6z"/>
+  </symbol>
   <symbol id="chevron-icon" viewBox="0 0 20 20">
     <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M5 7.5 10 12.5 15 7.5"/>
   </symbol>

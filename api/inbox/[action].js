@@ -61,6 +61,8 @@ async function handleFeedback(req, res) {
     wantsToWrite: typeof body.wantsToWrite === 'string' ? body.wantsToWrite : null,
     writeNote: typeof body.writeNote === 'string' ? body.writeNote.trim() || null : null,
     message,
+    postSlug: typeof body.postSlug === 'string' ? body.postSlug : null,
+    postTitle: typeof body.postTitle === 'string' ? body.postTitle : null,
   })
 
   res.status(201).json({ ok: true })

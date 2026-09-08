@@ -151,6 +151,12 @@ function AnalyticsDetail({ activeKey, data, reportedComments, onDeleteComment })
               <div>
                 <strong>{note.name || 'Anonymous'}</strong>
                 {note.email && <span className="analytics-detail-sub"> ({note.email})</span>}
+                {note.postSlug && (
+                  <span className="analytics-detail-sub">
+                    {' '}
+                    · re: <Link to={`/blog/${note.postSlug}`}>{note.postTitle}</Link>
+                  </span>
+                )}
                 <p>{note.message}</p>
                 {note.interests.length > 0 && (
                   <p className="analytics-detail-sub">Interested in: {note.interests.join(', ')}</p>

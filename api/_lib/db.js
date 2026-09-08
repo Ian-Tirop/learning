@@ -54,6 +54,8 @@ function mapPostRow(row) {
     authorAccountId: row.author_account_id || null,
     newsletterSent: Boolean(row.newsletter_sent),
     scheduledAt: row.scheduled_at || null,
+    seriesName: row.series_name || null,
+    seriesOrder: row.series_order ?? null,
     seed: {
       likes: row.seed_likes + Number(row.reaction_likes || 0),
       dislikes: row.seed_dislikes + Number(row.reaction_dislikes || 0),
@@ -244,7 +246,8 @@ export async function createPost(post) {
   const rows = await sql`
     INSERT INTO posts (
       slug, title, excerpt, content, tags, cover, date, reading_time, status,
-      link, submitted_by_name, submitted_by_email, edit_token, author_account_id, scheduled_at
+      link, submitted_by_name, submitted_by_email, edit_token, author_account_id, scheduled_at,
+      series_name, series_order
     ) VALUES (
       ${post.slug}, ${post.title}, ${post.excerpt},
       ${JSON.stringify(post.content)}::jsonb, ${post.tags}::text[],
@@ -252,7 +255,8 @@ export async function createPost(post) {
       ${post.date}, ${post.readingTime}, ${post.status},
       ${post.link ? JSON.stringify(post.link) : null}::jsonb,
       ${post.submittedByName || null}, ${post.submittedByEmail || null}, ${post.editToken || null},
-      ${post.authorAccountId || null}, ${post.scheduledAt || null}
+      ${post.authorAccountId || null}, ${post.scheduledAt || null},
+      ${post.seriesName || null}, ${post.seriesOrder ?? null}
     )
     RETURNING *
   `
@@ -268,6 +272,8 @@ export async function updatePostRow(slug, fields) {
     status: 'status',
     reviewNote: 'review_note',
     scheduledAt: 'scheduled_at',
+    seriesName: 'series_name',
+    seriesOrder: 'series_order',
   }
   const jsonColumns = { content: 'content', cover: 'cover', link: 'link' }
 
@@ -664,6 +670,8 @@ export async function getSiteAnalytics() {
       wantsToWrite: row.wants_to_write,
       writeNote: row.write_note,
       message: row.message,
+      postSlug: row.post_slug,
+      postTitle: row.post_title,
       createdAt: row.created_at,
     })),
   }
@@ -685,12 +693,23 @@ export async function deleteSubscriber(email) {
   await sql`DELETE FROM subscribers WHERE email = ${email}`
 }
 
-export async function createFeedback({ id, name, email, interests, wantsToWrite, writeNote, message }) {
+export async function createFeedback({
+  id,
+  name,
+  email,
+  interests,
+  wantsToWrite,
+  writeNote,
+  message,
+  postSlug,
+  postTitle,
+}) {
   await sql`
-    INSERT INTO feedback (id, name, email, interests, wants_to_write, write_note, message)
+    INSERT INTO feedback (id, name, email, interests, wants_to_write, write_note, message, post_slug, post_title)
     VALUES (
       ${id}, ${name || null}, ${email || null}, ${interests || []}::text[],
-      ${wantsToWrite || null}, ${writeNote || null}, ${message}
+      ${wantsToWrite || null}, ${writeNote || null}, ${message},
+      ${postSlug || null}, ${postTitle || null}
     )
   `
 }

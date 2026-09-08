@@ -17,6 +17,8 @@ import { ContentBlocks } from '../components/ContentBlocks'
 import { ReadingProgress } from '../components/ReadingProgress'
 import { Poll } from '../components/Poll'
 import { Quiz } from '../components/Quiz'
+import { SuggestEdit } from '../components/SuggestEdit'
+import { ListenButton } from '../components/ListenButton'
 import { formatDate } from '../lib/formatDate'
 import './BlogPost.css'
 
@@ -105,6 +107,11 @@ function BlogPostView({ slug }) {
   const headings = getHeadings(post.content)
   const canEditAsOwner = Boolean(token && post.status === 'pending')
   const extras = getPostExtras(post.slug)
+  const seriesPosts = post.seriesName
+    ? publishedOrder
+        .filter((candidate) => candidate.seriesName === post.seriesName)
+        .sort((a, b) => (a.seriesOrder ?? 0) - (b.seriesOrder ?? 0))
+    : []
 
   return (
     <article className="container post-page">
@@ -139,6 +146,7 @@ function BlogPostView({ slug }) {
           {post.readingTime} min read
           {post.submittedByName && ` · submitted by ${post.submittedByName}`}
         </p>
+        <ListenButton post={post} />
         {(effectiveIsAdmin || canEditAsOwner) && post.status !== 'published' && (
           <Link
             to={canEditAsOwner ? `/submit/edit/${post.slug}?token=${token}` : `/write/${post.slug}`}
@@ -148,6 +156,27 @@ function BlogPostView({ slug }) {
           </Link>
         )}
       </header>
+
+      {seriesPosts.length > 1 && (
+        <nav className="series-nav" aria-label={`${post.seriesName} series`}>
+          <p className="toc-label">{post.seriesName}</p>
+          <ul>
+            {seriesPosts.map((seriesPost) => (
+              <li key={seriesPost.slug}>
+                {seriesPost.slug === post.slug ? (
+                  <span className="series-current">
+                    Part {seriesPost.seriesOrder}: {seriesPost.title}
+                  </span>
+                ) : (
+                  <Link to={`/blog/${seriesPost.slug}`}>
+                    Part {seriesPost.seriesOrder}: {seriesPost.title}
+                  </Link>
+                )}
+              </li>
+            ))}
+          </ul>
+        </nav>
+      )}
 
       {headings.length > 1 && (
         <nav className="toc" aria-label="Table of contents">
@@ -170,6 +199,8 @@ function BlogPostView({ slug }) {
       <div className="prose">
         <ContentBlocks content={post.content} />
       </div>
+
+      {post.status === 'published' && <SuggestEdit postSlug={post.slug} postTitle={post.title} />}
 
       {post.link && (
         <a

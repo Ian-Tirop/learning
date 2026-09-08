@@ -84,6 +84,8 @@ function PostEditorForm({ slug, isNew }) {
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
   const [scheduledAt, setScheduledAt] = useState('')
+  const [seriesName, setSeriesName] = useState('')
+  const [seriesOrder, setSeriesOrder] = useState('')
 
   useEffect(() => {
     if (!existing) return
@@ -99,6 +101,8 @@ function PostEditorForm({ slug, isNew }) {
     setLinkLabel(existing.link?.label || '')
     setLinkHref(existing.link?.href || '')
     setScheduledAt(toDatetimeLocalValue(existing.scheduledAt))
+    setSeriesName(existing.seriesName || '')
+    setSeriesOrder(existing.seriesOrder != null ? String(existing.seriesOrder) : '')
   }, [existing])
 
   useDocumentTitle(isNew ? 'New post — Ian Tirop' : 'Edit — Ian Tirop')
@@ -150,6 +154,8 @@ function PostEditorForm({ slug, isNew }) {
     link: linkHref.trim() ? { href: linkHref.trim(), label: linkLabel.trim() || 'Read more' } : null,
     status,
     ...(status === 'scheduled' ? { scheduledAt: new Date(scheduledAt).toISOString() } : { scheduledAt: null }),
+    seriesName: seriesName.trim() || null,
+    seriesOrder: seriesOrder.trim() ? Number(seriesOrder) : null,
   })
 
   const handleSave = async (status) => {
@@ -251,6 +257,29 @@ function PostEditorForm({ slug, isNew }) {
           <label className="field">
             <span>Date</span>
             <input type="date" value={date} onChange={(event) => setDate(event.target.value)} />
+          </label>
+        </div>
+
+        <div className="field-row">
+          <label className="field">
+            <span>Series name (optional)</span>
+            <input
+              type="text"
+              value={seriesName}
+              onChange={(event) => setSeriesName(event.target.value)}
+              placeholder="e.g. Learning React"
+            />
+          </label>
+          <label className="field">
+            <span>Position in series</span>
+            <input
+              type="number"
+              min="1"
+              value={seriesOrder}
+              onChange={(event) => setSeriesOrder(event.target.value)}
+              placeholder="1"
+              disabled={!seriesName.trim()}
+            />
           </label>
         </div>
 

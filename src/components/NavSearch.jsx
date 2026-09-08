@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { getAllPosts } from '../data/postStore'
-import { searchPosts } from '../lib/searchPosts'
+import { searchPosts, getMatchSnippet } from '../lib/searchPosts'
 import { formatDate } from '../lib/formatDate'
 import './NavSearch.css'
 
@@ -91,16 +91,23 @@ export function NavSearch() {
 
           {query.trim() && (
             <ul className="nav-search-results">
-              {results.map((post) => (
-                <li key={post.slug}>
-                  <Link to={`/blog/${post.slug}`} onClick={close}>
-                    <span className="nav-search-result-title">{post.title}</span>
-                    <span className="nav-search-result-meta">
-                      {formatDate(post.date)} · {post.readingTime} min read
-                    </span>
-                  </Link>
-                </li>
-              ))}
+              {results.map((post) => {
+                const snippet = getMatchSnippet(post, query)
+                return (
+                  <li key={post.slug}>
+                    <Link to={`/blog/${post.slug}`} onClick={close}>
+                      <span className="nav-search-result-title">{post.title}</span>
+                      {snippet ? (
+                        <span className="nav-search-result-snippet">{snippet}</span>
+                      ) : (
+                        <span className="nav-search-result-meta">
+                          {formatDate(post.date)} · {post.readingTime} min read
+                        </span>
+                      )}
+                    </Link>
+                  </li>
+                )
+              })}
               {results.length === 0 && (
                 <li className="nav-search-empty">No posts match &quot;{query}&quot;.</li>
               )}
