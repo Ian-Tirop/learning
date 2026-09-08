@@ -60,10 +60,12 @@ async function handler(req, res) {
     return
   }
 
-  // Invoked by Vercel Cron (see vercel.json) — no admin session cookie
-  // arrives with a cron request, so this checks a shared secret instead.
-  // Publishes any post whose scheduled time has passed, and sends the
-  // same subscriber notification a manual publish/approve would.
+  // Invoked once daily by Vercel Cron (see vercel.json — Hobby plan caps
+  // cron jobs at once/day, so a scheduled post can go live up to ~24h
+  // after its target time). No admin session cookie arrives with a cron
+  // request, so this checks a shared secret instead. Publishes any post
+  // whose scheduled time has passed, and sends the same subscriber
+  // notification a manual publish/approve would.
   if (action === 'cron-publish-scheduled' && req.method === 'GET') {
     const secret = process.env.CRON_SECRET
     if (secret && req.headers.authorization !== `Bearer ${secret}`) {

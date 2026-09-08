@@ -398,8 +398,9 @@ function PostEditorForm({ slug, isNew }) {
           />
           <p className="body-hint">
             Set a date/time and click Schedule instead of Publish — it goes live automatically, and
-            subscribers still get notified. Checked hourly, so it may go live up to an hour after the
-            time you pick.
+            subscribers still get notified. Checked once a day (Vercel's Hobby plan caps cron jobs at
+            once daily), so it may go live up to ~24 hours after the time you pick — for anything
+            more precise, publish it manually when the time comes.
           </p>
         </label>
 
