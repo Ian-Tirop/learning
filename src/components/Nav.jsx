@@ -75,8 +75,8 @@ export function Nav() {
                 to={account ? '/profile' : '/account/login'}
                 onClick={() => setOpen(false)}
                 className={({ isActive }) => `profile-link${isActive ? ' active' : ''}`}
-                aria-label={account ? 'Your profile' : 'Sign in'}
-                title={account ? 'Your profile' : 'Sign in'}
+                aria-label={account ? `Hi, ${account.displayName}` : 'Sign in'}
+                title={account ? `Hi, ${account.displayName}` : 'Sign in'}
               >
                 <svg className="icon" role="presentation" aria-hidden="true">
                   <use href="/icons.svg#user-icon"></use>

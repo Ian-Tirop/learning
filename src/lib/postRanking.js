@@ -20,3 +20,21 @@ export function getRelatedPosts(posts, post, count = 3) {
     .slice(0, count)
     .map(({ candidate }) => candidate)
 }
+
+// A reader's own "Recommended for you" — scored against the combined tags
+// of everything they've liked/saved, same shared-tag-count approach as
+// getRelatedPosts. Falls back to the site's most-liked posts when a reader
+// has no signal yet (a brand-new account), so the section is never empty.
+export function getRecommendedPosts(posts, interestTags, count = 6) {
+  const tagSet = new Set(interestTags)
+  if (tagSet.size === 0) return getMostLiked(posts, count)
+
+  return [...posts]
+    .map((candidate) => ({
+      candidate,
+      shared: candidate.tags.filter((tag) => tagSet.has(tag)).length,
+    }))
+    .sort((a, b) => b.shared - a.shared || new Date(b.candidate.date) - new Date(a.candidate.date))
+    .slice(0, count)
+    .map(({ candidate }) => candidate)
+}

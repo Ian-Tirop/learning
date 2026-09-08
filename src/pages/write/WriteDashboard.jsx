@@ -168,35 +168,13 @@ function AnalyticsDetail({ activeKey, data }) {
   )
 }
 
-function AnalyticsSection() {
-  const [data, setData] = useState(null)
-  const [loading, setLoading] = useState(true)
+function AnalyticsBody({ data }) {
   const [activeKey, setActiveKey] = useState(null)
-
-  useEffect(() => {
-    getAnalytics()
-      .then(setData)
-      .catch(() => setData(null))
-      .finally(() => setLoading(false))
-  }, [])
-
-  if (loading) {
-    return (
-      <div className="analytics-section">
-        <p className="loading-note">Loading analytics…</p>
-      </div>
-    )
-  }
-
-  if (!data) return null
-
   const { totals, topLiked, topCommented, topRated } = data
-
   const toggleActive = (key) => setActiveKey((current) => (current === key ? null : key))
 
   return (
-    <div className="analytics-section">
-      <h2>Analytics</h2>
+    <>
       <p className="write-intro">
         Real numbers from your database — engagement, review queue, reader accounts, subscribers, and
         feedback. There&apos;s no page-view tracking on this site, so this won&apos;t show visits or
@@ -262,6 +240,51 @@ function AnalyticsSection() {
           </ul>
         </div>
       </div>
+    </>
+  )
+}
+
+// Collapsed by default — the full grid + leaderboards made /write very
+// long, and most visits here are to work the review queue, not to check
+// analytics. Data is only fetched the first time it's expanded.
+function AnalyticsSection() {
+  const [open, setOpen] = useState(false)
+  const [data, setData] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(false)
+
+  const handleToggle = () => {
+    setOpen((current) => !current)
+    if (!data && !loading) {
+      setLoading(true)
+      getAnalytics()
+        .then(setData)
+        .catch(() => setError(true))
+        .finally(() => setLoading(false))
+    }
+  }
+
+  return (
+    <div className="analytics-section">
+      <button
+        type="button"
+        className="analytics-toggle"
+        onClick={handleToggle}
+        aria-expanded={open}
+      >
+        <h2>Analytics</h2>
+        <svg className={`icon chevron${open ? ' open' : ''}`} role="presentation" aria-hidden="true">
+          <use href="/icons.svg#chevron-icon"></use>
+        </svg>
+      </button>
+
+      {open && (
+        <div className="analytics-body">
+          {loading && <p className="loading-note">Loading analytics…</p>}
+          {!loading && error && <p className="write-intro">Could not load analytics right now.</p>}
+          {!loading && data && <AnalyticsBody data={data} />}
+        </div>
+      )}
     </div>
   )
 }

@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { getMyPosts, getLikedPosts, getSavedPosts } from '../../data/accountStore'
+import { getAllPosts } from '../../data/postStore'
+import { getRecommendedPosts } from '../../lib/postRanking'
 import { PostCover } from '../../components/PostCover'
 import { useAccount } from '../../context/AccountContext'
 import { useDocumentTitle } from '../../hooks/useDocumentTitle'
@@ -189,6 +191,7 @@ export function Profile() {
   const [posts, setPosts] = useState([])
   const [liked, setLiked] = useState([])
   const [savedArticles, setSavedArticles] = useState([])
+  const [recommended, setRecommended] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -197,11 +200,23 @@ export function Profile() {
       getMyPosts().catch(() => []),
       getLikedPosts().catch(() => []),
       getSavedPosts().catch(() => []),
+      getAllPosts().catch(() => []),
     ])
-      .then(([myPosts, likedPosts, saved]) => {
+      .then(([myPosts, likedPosts, saved, allPublished]) => {
         setPosts(myPosts)
         setLiked(likedPosts)
         setSavedArticles(saved)
+
+        // Personalized picks: scored against everything they've liked/saved,
+        // excluding those same posts and anything they wrote themselves.
+        const seen = new Set([
+          ...likedPosts.map((p) => p.slug),
+          ...saved.map((p) => p.slug),
+          ...myPosts.map((p) => p.slug),
+        ])
+        const interestTags = [...likedPosts, ...saved].flatMap((p) => p.tags || [])
+        const candidates = allPublished.filter((p) => !seen.has(p.slug))
+        setRecommended(getRecommendedPosts(candidates, interestTags, 6))
       })
       .finally(() => setLoading(false))
   }, [account])
@@ -239,6 +254,23 @@ export function Profile() {
             Log out
           </button>
         </div>
+      </div>
+
+      <div className="profile-section">
+        <h2 className="profile-section-title">Recommended for you</h2>
+        <p className="write-intro">
+          {liked.length + savedArticles.length > 0
+            ? 'Picked based on what you’ve liked and saved.'
+            : 'Popular around the site right now — like or save a few posts to personalize this.'}
+        </p>
+        {!loading && recommended.length === 0 && (
+          <p className="write-intro">Nothing to recommend yet — check back once there&apos;s more on the blog.</p>
+        )}
+        <ul className="write-list">
+          {recommended.map((post) => (
+            <ArticleRow key={post.slug} post={post} />
+          ))}
+        </ul>
       </div>
 
       <div className="profile-section">
