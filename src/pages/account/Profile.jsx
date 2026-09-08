@@ -264,7 +264,7 @@ export function Profile() {
             : 'Popular around the site right now — like or save a few posts to personalize this.'}
         </p>
         {!loading && recommended.length === 0 && (
-          <p className="write-intro">Nothing to recommend yet — check back once there&apos;s more on the blog.</p>
+          <p className="write-intro">✨ Nothing to recommend yet — check back once there&apos;s more on the blog.</p>
         )}
         <ul className="write-list">
           {recommended.map((post) => (
@@ -288,7 +288,7 @@ export function Profile() {
         <p className="write-intro">Track their status and edit them any time.</p>
 
         {!loading && posts.length === 0 && (
-          <p className="write-intro">You haven&apos;t submitted anything yet.</p>
+          <p className="write-intro">📝 You haven&apos;t submitted anything yet.</p>
         )}
 
         <ul className="write-list">
@@ -326,7 +326,7 @@ export function Profile() {
           Anything you&apos;ve liked across the site — Ian&apos;s own posts and other readers&apos;
           published submissions alike.
         </p>
-        {!loading && liked.length === 0 && <p className="write-intro">Nothing liked yet.</p>}
+        {!loading && liked.length === 0 && <p className="write-intro">👍 Nothing liked yet.</p>}
         <ul className="write-list">
           {liked.map((post) => (
             <ArticleRow key={post.slug} post={post} />
@@ -337,7 +337,7 @@ export function Profile() {
       <div className="profile-section">
         <h2 className="profile-section-title">Saved articles {!loading && `(${savedArticles.length})`}</h2>
         <p className="write-intro">Bookmarked for later.</p>
-        {!loading && savedArticles.length === 0 && <p className="write-intro">Nothing saved yet.</p>}
+        {!loading && savedArticles.length === 0 && <p className="write-intro">🔖 Nothing saved yet.</p>}
         <ul className="write-list">
           {savedArticles.map((post) => (
             <ArticleRow key={post.slug} post={post} />

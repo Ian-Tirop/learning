@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAccount } from '../context/AccountContext'
+import { useToast } from '../context/ToastContext'
 import './PostEngagement.css'
 
 export function PostEngagement({
@@ -18,6 +19,7 @@ export function PostEngagement({
   rate,
 }) {
   const { account } = useAccount()
+  const showToast = useToast()
   const [hoverRating, setHoverRating] = useState(0)
   const [copied, setCopied] = useState(false)
   const [saveError, setSaveError] = useState(false)
@@ -26,7 +28,8 @@ export function PostEngagement({
   const handleToggleSave = async () => {
     try {
       setSaveError(false)
-      await toggleSave()
+      const data = await toggleSave()
+      showToast(data.saved ? 'Saved to your profile' : 'Removed from saved articles')
     } catch {
       setSaveError(true)
     }

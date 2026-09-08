@@ -116,6 +116,23 @@ body {
   transition: background-color 0.2s var(--ease);
 }
 
+/* Smooths the light/dark toggle in browsers that support it (Chrome,
+   Edge, Safari 18+) — useTheme.js wraps the actual attribute change in
+   document.startViewTransition(). Falls back to the plain background-color
+   transition above everywhere else. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.35s;
+  animation-timing-function: var(--ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+  }
+}
+
 #root {
   min-height: 100svh;
   display: flex;

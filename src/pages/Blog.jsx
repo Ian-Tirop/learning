@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { getAllPosts } from '../data/postStore'
 import { PostCover } from '../components/PostCover'
+import { SkeletonRow } from '../components/Skeleton'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { useMetaDescription } from '../hooks/useMetaDescription'
 import { useCanonicalUrl } from '../hooks/useCanonicalUrl'
@@ -103,7 +104,13 @@ export function Blog() {
       </div>
 
       <ul className="post-list">
-        {visiblePosts.map((post, index) => (
+        {loading &&
+          [0, 1, 2, 3].map((i) => (
+            <li key={i}>
+              <SkeletonRow />
+            </li>
+          ))}
+        {!loading && visiblePosts.map((post, index) => (
           <li key={post.slug}>
             <Link
               to={`/blog/${post.slug}`}
@@ -136,14 +143,17 @@ export function Blog() {
         ))}
       </ul>
 
-      {loading && <p className="loading-note">Loading posts…</p>}
-
       {!loading && visiblePosts.length === 0 && (
-        <p className="empty-state">
-          {normalizedQuery
-            ? `No posts match "${query}".`
-            : `No posts tagged "${activeTag}" yet.`}
-        </p>
+        <div className="empty-state">
+          <svg className="icon" role="presentation" aria-hidden="true">
+            <use href="/icons.svg#search-icon"></use>
+          </svg>
+          <p>
+            {normalizedQuery
+              ? `No posts match "${query}".`
+              : `No posts tagged "${activeTag}" yet.`}
+          </p>
+        </div>
       )}
     </section>
   )

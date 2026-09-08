@@ -139,12 +139,6 @@
   white-space: nowrap;
 }
 
-.empty-state {
-  text-align: center;
-  color: var(--text);
-  padding: 40px 0;
-}
-
 @media (max-width: 640px) {
   .post-row {
     flex-direction: column;

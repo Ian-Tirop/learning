@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { getAllPosts } from '../data/postStore'
 import { api } from '../lib/apiClient'
 import { PostCover } from '../components/PostCover'
+import { SkeletonPostCard } from '../components/Skeleton'
 import { Newsletter } from '../components/Newsletter'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { useMetaDescription } from '../hooks/useMetaDescription'
@@ -133,10 +134,10 @@ export default function IanTirop() {
           <h2>Recent posts</h2>
         </div>
 
-        {loading && <p className="loading-note">Loading posts…</p>}
-
         <div className="post-grid">
-          {latest.map((post, index) => (
+          {loading &&
+            [0, 1, 2].map((i) => <SkeletonPostCard key={i} />)}
+          {!loading && latest.map((post, index) => (
             <Link
               key={post.slug}
               to={`/blog/${post.slug}`}

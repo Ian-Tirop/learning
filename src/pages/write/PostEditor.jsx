@@ -11,6 +11,7 @@ import { formatDate } from '../../lib/formatDate'
 import { useDocumentTitle } from '../../hooks/useDocumentTitle'
 import { useMetaRobots } from '../../hooks/useMetaRobots'
 import { useAdmin } from '../../context/AdminContext'
+import { useToast } from '../../context/ToastContext'
 import './Write.css'
 
 function today() {
@@ -36,8 +37,15 @@ export function PostEditor() {
   return <PostEditorForm key={slug || 'new'} slug={slug} isNew={!slug} />
 }
 
+const STATUS_TOAST = {
+  published: 'Published! 🎉',
+  scheduled: 'Scheduled — it\'ll go live automatically',
+  draft: 'Draft saved',
+}
+
 function PostEditorForm({ slug, isNew }) {
   const navigate = useNavigate()
+  const showToast = useToast()
   const [existing, setExisting] = useState(null)
   const [loadingExisting, setLoadingExisting] = useState(!isNew)
   const [loadError, setLoadError] = useState(false)
@@ -183,6 +191,7 @@ function PostEditorForm({ slug, isNew }) {
       } else {
         await updatePost(existing.slug, buildData(status))
       }
+      showToast(STATUS_TOAST[status] || 'Saved', { type: status === 'published' ? 'success' : 'default' })
       navigate('/write')
     } catch (err) {
       setError(err.message || 'Could not save that post right now.')

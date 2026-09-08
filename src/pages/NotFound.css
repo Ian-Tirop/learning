@@ -13,6 +13,49 @@
   letter-spacing: -2px;
 }
 
+.not-found-illustration {
+  width: 160px;
+  height: 120px;
+}
+
+.not-found-page {
+  animation: not-found-float 3.5s ease-in-out infinite;
+  transform-origin: center;
+}
+
+.not-found-dot {
+  animation: not-found-float 3.5s ease-in-out infinite;
+}
+
+.dot-1 {
+  animation-delay: -0.6s;
+}
+
+.dot-2 {
+  animation-delay: -1.4s;
+}
+
+.dot-3 {
+  animation-delay: -2.2s;
+}
+
+@keyframes not-found-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .not-found-page,
+  .not-found-dot {
+    animation: none;
+  }
+}
+
 .not-found-text {
   max-width: 420px;
   color: var(--text);

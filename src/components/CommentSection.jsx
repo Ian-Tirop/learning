@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { formatRelativeDate } from '../lib/formatRelativeDate'
+import { useToast } from '../context/ToastContext'
 import './CommentSection.css'
 
 function ReplyForm({ onSubmit, onCancel }) {
@@ -286,6 +287,7 @@ export function CommentSection({
   const [editingId, setEditingId] = useState(null)
   const [confirmingDeleteId, setConfirmingDeleteId] = useState(null)
   const [sortKey, setSortKey] = useState('newest')
+  const showToast = useToast()
 
   const totalCount = comments.reduce((sum, comment) => sum + 1 + comment.replies.length, 0)
   const sortedComments = sortComments(comments, sortKey)
@@ -304,6 +306,7 @@ export function CommentSection({
     setName('')
     setText('')
     setError('')
+    showToast('Comment posted!', { type: 'success' })
   }
 
   return (

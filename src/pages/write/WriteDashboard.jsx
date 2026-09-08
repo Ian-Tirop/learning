@@ -6,8 +6,15 @@ import { PostCover } from '../../components/PostCover'
 import { useDocumentTitle } from '../../hooks/useDocumentTitle'
 import { useMetaRobots } from '../../hooks/useMetaRobots'
 import { useAdmin } from '../../context/AdminContext'
+import { useToast } from '../../context/ToastContext'
+import { useCountUp } from '../../hooks/useCountUp'
 import { formatDate } from '../../lib/formatDate'
 import './Write.css'
+
+function StatValue({ value }) {
+  const animated = useCountUp(value)
+  return <span className="stat-value">{animated}</span>
+}
 
 const STATUS_LABEL = { draft: 'Draft', published: 'Published', pending: 'Pending review', rejected: 'Rejected', scheduled: 'Scheduled' }
 
@@ -222,7 +229,7 @@ function AnalyticsBody({ data }) {
             onClick={() => toggleActive(stat.key)}
             aria-pressed={activeKey === stat.key}
           >
-            <span className="stat-value">{stat.value(totals)}</span>
+            <StatValue value={stat.value(totals)} />
             <span className="stat-label">{typeof stat.label === 'function' ? stat.label(totals) : stat.label}</span>
           </button>
         ))}
@@ -344,6 +351,7 @@ export function WriteDashboard() {
   useDocumentTitle('Write — Ian Tirop')
   useMetaRobots()
   const { isAdmin, loading: authLoading } = useAdmin()
+  const showToast = useToast()
 
   const [posts, setPosts] = useState([])
   const [loading, setLoading] = useState(true)
@@ -371,11 +379,13 @@ export function WriteDashboard() {
     await deletePost(slug)
     setConfirmingSlug(null)
     refresh()
+    showToast('Post deleted')
   }
 
   const handleApprove = async (slug) => {
     await updatePost(slug, { status: 'published' })
     refresh()
+    showToast('Published! 🎉', { type: 'success' })
   }
 
   const handleReject = async (slug) => {
@@ -383,6 +393,7 @@ export function WriteDashboard() {
     setReviewNoteFor(null)
     setReviewNote('')
     refresh()
+    showToast('Submission rejected')
   }
 
   const pending = posts.filter((post) => post.status === 'pending')

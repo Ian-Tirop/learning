@@ -16,7 +16,21 @@ export function useTheme() {
     localStorage.setItem('theme', theme)
   }, [theme])
 
-  const toggleTheme = () => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))
+  const toggleTheme = () => {
+    const next = theme === 'dark' ? 'light' : 'dark'
+
+    // The View Transitions API needs the DOM change to happen inside its
+    // callback (synchronously, not via React's next effect run) so it can
+    // correctly capture the before/after screenshots to crossfade between.
+    if (document.startViewTransition) {
+      document.startViewTransition(() => {
+        document.documentElement.setAttribute('data-theme', next)
+        setTheme(next)
+      })
+    } else {
+      setTheme(next)
+    }
+  }
 
   return [theme, toggleTheme]
 }
