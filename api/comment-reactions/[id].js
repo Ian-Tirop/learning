@@ -1,4 +1,4 @@
-import { toggleCommentReaction } from '../_lib/db.js'
+import { toggleCommentReaction, toggleCommentReport } from '../_lib/db.js'
 import { withErrorHandling } from '../_lib/http.js'
 
 const ALLOWED_EMOJI = new Set(['👍', '❤️', '😂', '🎉', '😮', '👎'])
@@ -15,11 +15,18 @@ async function handler(req, res) {
     return
   }
 
-  const { visitorId, emoji } = req.body || {}
+  const { visitorId, emoji, report } = req.body || {}
   if (!visitorId || typeof visitorId !== 'string') {
     res.status(400).json({ error: 'A visitorId is required.' })
     return
   }
+
+  if (report !== undefined) {
+    const active = await toggleCommentReport(id, visitorId)
+    res.status(200).json({ reported: active })
+    return
+  }
+
   if (!ALLOWED_EMOJI.has(emoji)) {
     res.status(400).json({ error: 'Unsupported emoji.' })
     return

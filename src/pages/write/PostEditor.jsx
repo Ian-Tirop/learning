@@ -17,6 +17,13 @@ function today() {
   return new Date().toISOString().slice(0, 10)
 }
 
+function toDatetimeLocalValue(isoString) {
+  if (!isoString) return ''
+  const d = new Date(isoString)
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
 export function PostEditor() {
   const { slug } = useParams()
   const { isAdmin, loading: authLoading } = useAdmin()
@@ -68,6 +75,7 @@ function PostEditorForm({ slug, isNew }) {
   const [mode, setMode] = useState('write')
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
+  const [scheduledAt, setScheduledAt] = useState('')
 
   useEffect(() => {
     if (!existing) return
@@ -82,6 +90,7 @@ function PostEditorForm({ slug, isNew }) {
     setCover(findMatchingPreset(existing.cover))
     setLinkLabel(existing.link?.label || '')
     setLinkHref(existing.link?.href || '')
+    setScheduledAt(toDatetimeLocalValue(existing.scheduledAt))
   }, [existing])
 
   useDocumentTitle(isNew ? 'New post — Ian Tirop' : 'Edit — Ian Tirop')
@@ -132,6 +141,7 @@ function PostEditorForm({ slug, isNew }) {
     content: parsedContent,
     link: linkHref.trim() ? { href: linkHref.trim(), label: linkLabel.trim() || 'Read more' } : null,
     status,
+    ...(status === 'scheduled' ? { scheduledAt: new Date(scheduledAt).toISOString() } : { scheduledAt: null }),
   })
 
   const handleSave = async (status) => {
@@ -146,6 +156,16 @@ function PostEditorForm({ slug, isNew }) {
     if (!excerpt.trim()) {
       setError('Add a short excerpt — it shows up on the blog index and home page.')
       return
+    }
+    if (status === 'scheduled') {
+      if (!scheduledAt) {
+        setError('Pick a date and time to schedule this for.')
+        return
+      }
+      if (new Date(scheduledAt).getTime() <= Date.now()) {
+        setError('Scheduled time has to be in the future.')
+        return
+      }
     }
 
     setSaving(true)
@@ -369,10 +389,29 @@ function PostEditorForm({ slug, isNew }) {
           </div>
         </label>
 
+        <label className="field">
+          <span>Schedule for later (optional)</span>
+          <input
+            type="datetime-local"
+            value={scheduledAt}
+            onChange={(event) => setScheduledAt(event.target.value)}
+          />
+          <p className="body-hint">
+            Set a date/time and click Schedule instead of Publish — it goes live automatically, and
+            subscribers still get notified. Checked hourly, so it may go live up to an hour after the
+            time you pick.
+          </p>
+        </label>
+
         <div className="write-form-actions">
           <button type="button" className="btn btn-ghost" disabled={saving} onClick={() => handleSave('draft')}>
             Save draft
           </button>
+          {scheduledAt && (
+            <button type="button" className="btn btn-ghost" disabled={saving} onClick={() => handleSave('scheduled')}>
+              {saving ? 'Saving…' : 'Schedule'}
+            </button>
+          )}
           <button type="button" className="btn btn-primary" disabled={saving} onClick={() => handleSave('published')}>
             {saving ? 'Saving…' : 'Publish'}
           </button>

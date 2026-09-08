@@ -13,6 +13,8 @@ import {
   getAccountByIdForAuth,
   updateAccountProfile,
   updateAccountPassword,
+  setPasswordResetToken,
+  getAccountByResetToken,
   getPostsForAccount,
   getLikedPostsForAccount,
   getSavedPostsForAccount,
@@ -25,6 +27,7 @@ import {
   buildClearReaderCookie,
   getReaderAccountId,
 } from '../_lib/auth.js'
+import { sendPasswordResetEmail, getSiteUrl } from '../_lib/email.js'
 import { withErrorHandling } from '../_lib/http.js'
 
 async function handleSignup(req, res) {
@@ -180,6 +183,49 @@ async function handleChangePassword(req, res) {
   res.status(200).json({ ok: true })
 }
 
+const RESET_TOKEN_TTL_MS = 30 * 60 * 1000 // 30 minutes
+
+async function handleForgotPassword(req, res) {
+  const body = req.body || {}
+  const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : ''
+
+  // Always respond the same way whether or not the email exists — avoids
+  // leaking which addresses have an account here.
+  if (email) {
+    const row = await getAccountByEmailForLogin(email)
+    if (row) {
+      const token = crypto.randomUUID()
+      const expires = new Date(Date.now() + RESET_TOKEN_TTL_MS)
+      await setPasswordResetToken(email, token, expires)
+      const resetUrl = `${getSiteUrl()}/account/reset-password?email=${encodeURIComponent(email)}&token=${token}`
+      await sendPasswordResetEmail(email, resetUrl)
+    }
+  }
+
+  res.status(200).json({ ok: true })
+}
+
+async function handleResetPassword(req, res) {
+  const body = req.body || {}
+  const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : ''
+  const token = typeof body.token === 'string' ? body.token : ''
+  const newPassword = typeof body.newPassword === 'string' ? body.newPassword : ''
+
+  if (newPassword.length < 8) {
+    res.status(400).json({ error: 'Your new password must be at least 8 characters.' })
+    return
+  }
+
+  const account = await getAccountByResetToken(email, token)
+  if (!account) {
+    res.status(400).json({ error: 'That reset link is invalid or has expired.' })
+    return
+  }
+
+  await updateAccountPassword(account.id, hashPassword(newPassword))
+  res.status(200).json({ ok: true })
+}
+
 async function handler(req, res) {
   const action = req.query?.action
 
@@ -192,6 +238,8 @@ async function handler(req, res) {
   if (action === 'saved-posts' && req.method === 'GET') return handleSavedPosts(req, res)
   if (action === 'update-profile' && req.method === 'POST') return handleUpdateProfile(req, res)
   if (action === 'change-password' && req.method === 'POST') return handleChangePassword(req, res)
+  if (action === 'forgot-password' && req.method === 'POST') return handleForgotPassword(req, res)
+  if (action === 'reset-password' && req.method === 'POST') return handleResetPassword(req, res)
 
   res.status(404).json({ error: 'Not found.' })
 }

@@ -11,6 +11,8 @@ import { Submit } from './pages/Submit'
 import { Login } from './pages/admin/Login'
 import { AccountSignup } from './pages/account/AccountSignup'
 import { AccountLogin } from './pages/account/AccountLogin'
+import { ForgotPassword } from './pages/account/ForgotPassword'
+import { ResetPassword } from './pages/account/ResetPassword'
 import { Profile } from './pages/account/Profile'
 import { NotFound } from './pages/NotFound'
 import { WriteDashboard } from './pages/write/WriteDashboard'
@@ -41,6 +43,8 @@ function App() {
             <Route path="/admin/login" element={<Login />} />
             <Route path="/account/signup" element={<AccountSignup />} />
             <Route path="/account/login" element={<AccountLogin />} />
+            <Route path="/account/forgot-password" element={<ForgotPassword />} />
+            <Route path="/account/reset-password" element={<ResetPassword />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/write" element={<WriteDashboard />} />
             <Route path="/write/new" element={<PostEditor />} />

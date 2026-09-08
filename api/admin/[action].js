@@ -12,7 +12,8 @@ import {
   requireAdmin,
   safeEqual,
 } from '../_lib/auth.js'
-import { getSiteAnalytics } from '../_lib/db.js'
+import { getSiteAnalytics, publishDuePosts, getAllSubscriberEmails, markNewsletterSent } from '../_lib/db.js'
+import { sendPublishNotification } from '../_lib/email.js'
 import { withErrorHandling } from '../_lib/http.js'
 
 async function handler(req, res) {
@@ -56,6 +57,30 @@ async function handler(req, res) {
     if (!requireAdmin(req, res)) return
     const analytics = await getSiteAnalytics()
     res.status(200).json(analytics)
+    return
+  }
+
+  // Invoked by Vercel Cron (see vercel.json) — no admin session cookie
+  // arrives with a cron request, so this checks a shared secret instead.
+  // Publishes any post whose scheduled time has passed, and sends the
+  // same subscriber notification a manual publish/approve would.
+  if (action === 'cron-publish-scheduled' && req.method === 'GET') {
+    const secret = process.env.CRON_SECRET
+    if (secret && req.headers.authorization !== `Bearer ${secret}`) {
+      res.status(401).json({ error: 'Unauthorized' })
+      return
+    }
+
+    const published = await publishDuePosts()
+    if (published.length > 0) {
+      const emails = await getAllSubscriberEmails()
+      for (const post of published) {
+        if (post.newsletterSent) continue
+        const { sent } = await sendPublishNotification(post, emails)
+        if (sent) await markNewsletterSent(post.slug)
+      }
+    }
+    res.status(200).json({ published: published.length })
     return
   }
 

@@ -11,7 +11,7 @@ import { formatDate } from '../../lib/formatDate'
 import '../write/Write.css'
 import './Account.css'
 
-const STATUS_LABEL = { draft: 'Draft', published: 'Published', pending: 'Pending review', rejected: 'Rejected' }
+const STATUS_LABEL = { draft: 'Draft', published: 'Published', pending: 'Pending review', rejected: 'Rejected', scheduled: 'Scheduled' }
 
 function initials(name) {
   if (!name) return '?'

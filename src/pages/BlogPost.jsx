@@ -205,6 +205,7 @@ function BlogPostView({ slug }) {
             editReply={engagement.editReply}
             deleteReply={engagement.deleteReply}
             toggleReaction={engagement.toggleReaction}
+            reportComment={engagement.reportComment}
           />
         </>
       )}

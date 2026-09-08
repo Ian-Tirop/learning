@@ -6,3 +6,8 @@ import { api } from '../lib/apiClient'
 export async function getAnalytics() {
   return api.get('/api/admin/analytics')
 }
+
+/** Admin-only: deletes any comment regardless of who posted it. */
+export async function deleteCommentAsAdmin(id) {
+  await api.delete(`/api/comments/${id}`)
+}

@@ -53,6 +53,7 @@ function mapPostRow(row) {
     reviewNote: row.review_note || undefined,
     authorAccountId: row.author_account_id || null,
     newsletterSent: Boolean(row.newsletter_sent),
+    scheduledAt: row.scheduled_at || null,
     seed: {
       likes: row.seed_likes + Number(row.reaction_likes || 0),
       dislikes: row.seed_dislikes + Number(row.reaction_dislikes || 0),
@@ -190,6 +191,7 @@ function mapCommentRow(row) {
     text: row.body,
     mentionOf: row.mention_of || null,
     visitorId: row.visitor_id || null,
+    accountId: row.account_id || null,
     createdAt: row.created_at,
     editedAt: row.edited_at || null,
   }
@@ -200,6 +202,11 @@ export async function getCommentsForPost(slug) {
     SELECT * FROM comments WHERE post_slug = ${slug} ORDER BY created_at ASC
   `
   return rows.map(mapCommentRow)
+}
+
+export async function getCommentById(id) {
+  const rows = await sql`SELECT * FROM comments WHERE id = ${id} LIMIT 1`
+  return rows[0] ? mapCommentRow(rows[0]) : null
 }
 
 export async function getTopComments(limit = 3) {
@@ -237,7 +244,7 @@ export async function createPost(post) {
   const rows = await sql`
     INSERT INTO posts (
       slug, title, excerpt, content, tags, cover, date, reading_time, status,
-      link, submitted_by_name, submitted_by_email, edit_token, author_account_id
+      link, submitted_by_name, submitted_by_email, edit_token, author_account_id, scheduled_at
     ) VALUES (
       ${post.slug}, ${post.title}, ${post.excerpt},
       ${JSON.stringify(post.content)}::jsonb, ${post.tags}::text[],
@@ -245,7 +252,7 @@ export async function createPost(post) {
       ${post.date}, ${post.readingTime}, ${post.status},
       ${post.link ? JSON.stringify(post.link) : null}::jsonb,
       ${post.submittedByName || null}, ${post.submittedByEmail || null}, ${post.editToken || null},
-      ${post.authorAccountId || null}
+      ${post.authorAccountId || null}, ${post.scheduledAt || null}
     )
     RETURNING *
   `
@@ -260,6 +267,7 @@ export async function updatePostRow(slug, fields) {
     readingTime: 'reading_time',
     status: 'status',
     reviewNote: 'review_note',
+    scheduledAt: 'scheduled_at',
   }
   const jsonColumns = { content: 'content', cover: 'cover', link: 'link' }
 
@@ -301,10 +309,27 @@ export async function deletePostRow(slug) {
   await sql`DELETE FROM posts WHERE slug = ${slug}`
 }
 
+// Flips every due scheduled post to published — called from the cron
+// endpoint (api/admin/[action].js, action=cron-publish-scheduled).
+export async function publishDuePosts() {
+  const due = await sql`
+    SELECT slug FROM posts WHERE status = 'scheduled' AND scheduled_at <= now()
+  `
+  const results = []
+  for (const row of due) {
+    const updated = await updatePostRow(row.slug, { status: 'published', scheduledAt: null })
+    if (updated) results.push(updated)
+  }
+  return results
+}
+
 export async function createComment(comment) {
   const rows = await sql`
-    INSERT INTO comments (id, post_slug, parent_id, name, body, mention_of, visitor_id)
-    VALUES (${comment.id}, ${comment.postSlug}, ${comment.parentId || null}, ${comment.name}, ${comment.text}, ${comment.mentionOf || null}, ${comment.visitorId || null})
+    INSERT INTO comments (id, post_slug, parent_id, name, body, mention_of, visitor_id, account_id)
+    VALUES (
+      ${comment.id}, ${comment.postSlug}, ${comment.parentId || null}, ${comment.name}, ${comment.text},
+      ${comment.mentionOf || null}, ${comment.visitorId || null}, ${comment.accountId || null}
+    )
     RETURNING *
   `
   return mapCommentRow(rows[0])
@@ -324,6 +349,47 @@ export async function deleteComment(id, visitorId) {
     DELETE FROM comments WHERE id = ${id} AND visitor_id = ${visitorId} RETURNING id
   `
   return rows.length > 0
+}
+
+// Admin can delete any comment, regardless of who posted it — used both
+// for general moderation and for cleaning up a reported comment.
+export async function deleteCommentAsAdmin(id) {
+  await sql`DELETE FROM comments WHERE id = ${id}`
+}
+
+export async function toggleCommentReport(commentId, visitorId) {
+  const existing = await sql`
+    SELECT 1 FROM comment_reports WHERE comment_id = ${commentId} AND visitor_id = ${visitorId}
+  `
+  if (existing.length > 0) {
+    await sql`DELETE FROM comment_reports WHERE comment_id = ${commentId} AND visitor_id = ${visitorId}`
+    return false
+  }
+  await sql`
+    INSERT INTO comment_reports (comment_id, visitor_id) VALUES (${commentId}, ${visitorId})
+    ON CONFLICT DO NOTHING
+  `
+  return true
+}
+
+export async function getReportedComments() {
+  const rows = await sql`
+    SELECT c.id, c.name, c.body, c.post_slug, p.title AS post_title,
+      COUNT(r.visitor_id)::int AS report_count
+    FROM comment_reports r
+    JOIN comments c ON c.id = r.comment_id
+    JOIN posts p ON p.slug = c.post_slug
+    GROUP BY c.id, c.name, c.body, c.post_slug, p.title
+    ORDER BY report_count DESC, c.id
+  `
+  return rows.map((row) => ({
+    id: row.id,
+    name: row.name,
+    text: row.body,
+    postSlug: row.post_slug,
+    postTitle: row.post_title,
+    reportCount: row.report_count,
+  }))
 }
 
 export async function toggleCommentReaction(commentId, visitorId, emoji) {
@@ -423,7 +489,31 @@ export async function updateAccountProfile(id, { displayName, email }) {
 }
 
 export async function updateAccountPassword(id, passwordHash) {
-  await sql`UPDATE accounts SET password_hash = ${passwordHash} WHERE id = ${id}`
+  await sql`
+    UPDATE accounts
+    SET password_hash = ${passwordHash}, password_reset_token = NULL, password_reset_expires = NULL
+    WHERE id = ${id}
+  `
+}
+
+export async function setPasswordResetToken(email, token, expires) {
+  await sql`
+    UPDATE accounts SET password_reset_token = ${token}, password_reset_expires = ${expires}
+    WHERE email = ${email}
+  `
+}
+
+// Looked up by token + email together — the token alone (a random UUID)
+// is already unguessable, but this costs nothing and rules out a stale
+// link for the wrong account entirely.
+export async function getAccountByResetToken(email, token) {
+  const rows = await sql`
+    SELECT * FROM accounts
+    WHERE email = ${email} AND password_reset_token = ${token}
+      AND password_reset_expires > now()
+    LIMIT 1
+  `
+  return rows[0] || null
 }
 
 // Real numbers from what the site actually tracks (engagement + review
@@ -440,6 +530,8 @@ export async function getSiteAnalytics() {
     recentComments,
     subscribers,
     feedback,
+    trendingRows,
+    reportedComments,
   ] = await Promise.all([
     getAllPostsForAdmin(null),
     sql`SELECT post_slug, COUNT(*)::int AS count FROM comments GROUP BY post_slug`,
@@ -454,6 +546,21 @@ export async function getSiteAnalytics() {
     `,
     sql`SELECT email, subscribed_at FROM subscribers ORDER BY subscribed_at DESC`,
     sql`SELECT * FROM feedback ORDER BY created_at DESC`,
+    // "Trending this week" — comment velocity is the cleanest recency
+    // signal actually available: post_reactions (likes) never recorded a
+    // timestamp historically, so backfilling one would make old likes look
+    // freshly "trending". Comments always had created_at, seed data
+    // included, so this doesn't need any schema backfill to be accurate.
+    sql`
+      SELECT c.post_slug, p.title, COUNT(*)::int AS count
+      FROM comments c
+      JOIN posts p ON p.slug = c.post_slug
+      WHERE c.created_at > now() - interval '7 days' AND p.status = 'published'
+      GROUP BY c.post_slug, p.title
+      ORDER BY count DESC
+      LIMIT 5
+    `,
+    getReportedComments(),
   ])
 
   const commentCountBySlug = Object.fromEntries(commentCountRows.map((row) => [row.post_slug, row.count]))
@@ -512,10 +619,13 @@ export async function getSiteAnalytics() {
       ratingCount,
       subscribers: subscribers.length,
       feedback: feedback.length,
+      reportedComments: reportedComments.length,
     },
     topLiked,
     topCommented,
     topRated,
+    trending: trendingRows.map((row) => ({ slug: row.post_slug, title: row.title, comments: row.count })),
+    reportedComments,
     // Full lists (not just top 5) — the frontend uses these for the
     // click-to-drill-down detail view on each stat card.
     posts: allPosts.map((post) => ({

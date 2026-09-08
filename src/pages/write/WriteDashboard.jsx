@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { deletePost, getAllPosts, updatePost } from '../../data/postStore'
-import { getAnalytics } from '../../data/adminStore'
+import { getAnalytics, deleteCommentAsAdmin } from '../../data/adminStore'
 import { PostCover } from '../../components/PostCover'
 import { useDocumentTitle } from '../../hooks/useDocumentTitle'
 import { useMetaRobots } from '../../hooks/useMetaRobots'
@@ -9,7 +9,7 @@ import { useAdmin } from '../../context/AdminContext'
 import { formatDate } from '../../lib/formatDate'
 import './Write.css'
 
-const STATUS_LABEL = { draft: 'Draft', published: 'Published', pending: 'Pending review', rejected: 'Rejected' }
+const STATUS_LABEL = { draft: 'Draft', published: 'Published', pending: 'Pending review', rejected: 'Rejected', scheduled: 'Scheduled' }
 
 function statPosts(data, statusFilter) {
   return data.posts
@@ -27,6 +27,7 @@ const STAT_DEFS = [
   { key: 'accounts', label: 'Reader accounts', value: (t) => t.accounts },
   { key: 'subscribers', label: 'Newsletter subscribers', value: (t) => t.subscribers },
   { key: 'feedback', label: 'Feedback notes', value: (t) => t.feedback },
+  { key: 'reportedComments', label: 'Reported comments', value: (t) => t.reportedComments },
   { key: 'likes', label: 'Likes', value: (t) => t.likes },
   { key: 'dislikes', label: 'Dislikes', value: (t) => t.dislikes },
   {
@@ -56,7 +57,7 @@ function PostDetailList({ posts, emptyMessage }) {
   )
 }
 
-function AnalyticsDetail({ activeKey, data }) {
+function AnalyticsDetail({ activeKey, data, reportedComments, onDeleteComment }) {
   if (!activeKey) return null
 
   const { posts, accounts, subscribers, feedback, recentComments } = data
@@ -158,6 +159,31 @@ function AnalyticsDetail({ activeKey, data }) {
           ))}
         </ul>
       )
+  } else if (activeKey === 'reportedComments') {
+    title = 'Reported comments'
+    body =
+      reportedComments.length === 0 ? (
+        <p className="write-intro">No comments have been reported.</p>
+      ) : (
+        <ul className="analytics-list recent-comments-list">
+          {reportedComments.map((comment) => (
+            <li key={comment.id}>
+              <div>
+                <strong>{comment.name}</strong> on{' '}
+                <Link to={`/blog/${comment.postSlug}`}>{comment.postTitle}</Link>
+                <span className="analytics-detail-sub">
+                  {' '}
+                  · reported {comment.reportCount} {comment.reportCount === 1 ? 'time' : 'times'}
+                </span>
+                <p>{comment.text}</p>
+              </div>
+              <button type="button" className="comment-action-btn danger" onClick={() => onDeleteComment(comment.id)}>
+                Delete
+              </button>
+            </li>
+          ))}
+        </ul>
+      )
   }
 
   return (
@@ -170,8 +196,14 @@ function AnalyticsDetail({ activeKey, data }) {
 
 function AnalyticsBody({ data }) {
   const [activeKey, setActiveKey] = useState(null)
-  const { totals, topLiked, topCommented, topRated } = data
+  const [reportedComments, setReportedComments] = useState(data.reportedComments)
+  const { totals, topLiked, topCommented, topRated, trending } = data
   const toggleActive = (key) => setActiveKey((current) => (current === key ? null : key))
+
+  const handleDeleteComment = async (id) => {
+    await deleteCommentAsAdmin(id)
+    setReportedComments((current) => current.filter((comment) => comment.id !== id))
+  }
 
   return (
     <>
@@ -196,7 +228,12 @@ function AnalyticsBody({ data }) {
         ))}
       </div>
 
-      <AnalyticsDetail activeKey={activeKey} data={data} />
+      <AnalyticsDetail
+        activeKey={activeKey}
+        data={data}
+        reportedComments={reportedComments}
+        onDeleteComment={handleDeleteComment}
+      />
 
       <div className="analytics-columns">
         <div className="analytics-column">
@@ -235,6 +272,20 @@ function AnalyticsBody({ data }) {
                 <span>
                   {post.average.toFixed(1)} ★ ({post.count})
                 </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="analytics-column">
+          <h3>Trending this week</h3>
+          <p className="body-hint">By comment activity in the last 7 days.</p>
+          {trending.length === 0 && <p className="write-intro">Nothing this week yet.</p>}
+          <ul className="analytics-list">
+            {trending.map((post) => (
+              <li key={post.slug}>
+                <Link to={`/blog/${post.slug}`}>{post.title}</Link>
+                <span>{post.comments} 💬</span>
               </li>
             ))}
           </ul>

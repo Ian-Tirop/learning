@@ -69,8 +69,16 @@ async function handler(req, res) {
     }
 
     if (admin) {
-      // Ian, writing directly: draft or publish immediately, his call.
-      post.status = body.status === 'published' ? 'published' : 'draft'
+      // Ian, writing directly: draft, publish immediately, or schedule
+      // for later — his call.
+      if (body.status === 'published') {
+        post.status = 'published'
+      } else if (body.status === 'scheduled' && typeof body.scheduledAt === 'string' && body.scheduledAt) {
+        post.status = 'scheduled'
+        post.scheduledAt = body.scheduledAt
+      } else {
+        post.status = 'draft'
+      }
     } else {
       // A reader's request to post: always goes to review, regardless of
       // what the client sends — never trust the client for this.

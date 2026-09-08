@@ -69,6 +69,9 @@ export function AccountLogin() {
       </form>
 
       <p className="login-switch">
+        <Link to="/account/forgot-password">Forgot your password?</Link>
+      </p>
+      <p className="login-switch">
         Don&apos;t have an account? <Link to="/account/signup">Create one</Link>
       </p>
     </section>

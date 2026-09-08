@@ -109,6 +109,18 @@ export function usePostEngagement(post) {
     setRawComments((prev) => [...prev, data.comment])
   }
 
+  const [reportedIds, setReportedIds] = useState(new Set())
+
+  const reportComment = async (commentId) => {
+    const data = await api.post(`/api/comment-reactions/${commentId}`, { visitorId, report: true })
+    setReportedIds((prev) => {
+      const next = new Set(prev)
+      if (data.reported) next.add(commentId)
+      else next.delete(commentId)
+      return next
+    })
+  }
+
   const toggleReaction = async (commentId, emoji) => {
     const data = await api.post(`/api/comment-reactions/${commentId}`, { visitorId, emoji })
     setRawComments((prev) =>
@@ -136,7 +148,12 @@ export function usePostEngagement(post) {
     ratingCount,
     userRating: myRating,
     rate,
-    comments: buildTree(rawComments, visitorId),
+    comments: buildTree(rawComments, visitorId).map((comment) => ({
+      ...comment,
+      reported: reportedIds.has(comment.id),
+      replies: comment.replies.map((reply) => ({ ...reply, reported: reportedIds.has(reply.id) })),
+    })),
+    reportComment,
     loading,
     addComment,
     editComment,

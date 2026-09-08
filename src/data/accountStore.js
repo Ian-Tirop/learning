@@ -48,3 +48,11 @@ export async function updateProfile({ displayName, email }) {
 export async function changePassword({ currentPassword, newPassword }) {
   await api.post('/api/accounts/change-password', { currentPassword, newPassword })
 }
+
+export async function requestPasswordReset(email) {
+  await api.post('/api/accounts/forgot-password', { email })
+}
+
+export async function resetPassword({ email, token, newPassword }) {
+  await api.post('/api/accounts/reset-password', { email, token, newPassword })
+}

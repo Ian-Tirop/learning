@@ -10,8 +10,13 @@ CREATE TABLE IF NOT EXISTS accounts (
   email text NOT NULL UNIQUE,
   password_hash text NOT NULL,
   display_name text NOT NULL,
+  password_reset_token text,
+  password_reset_expires timestamptz,
   created_at timestamptz NOT NULL DEFAULT now()
 );
+
+ALTER TABLE accounts ADD COLUMN IF NOT EXISTS password_reset_token text;
+ALTER TABLE accounts ADD COLUMN IF NOT EXISTS password_reset_expires timestamptz;
 
 CREATE TABLE IF NOT EXISTS posts (
   slug text PRIMARY KEY,
@@ -23,7 +28,7 @@ CREATE TABLE IF NOT EXISTS posts (
   date date NOT NULL,
   reading_time int NOT NULL DEFAULT 1,
   status text NOT NULL DEFAULT 'draft'
-    CHECK (status IN ('draft', 'pending', 'published', 'rejected')),
+    CHECK (status IN ('draft', 'pending', 'published', 'rejected', 'scheduled')),
   link jsonb,
   submitted_by_name text,
   submitted_by_email text,
@@ -31,6 +36,7 @@ CREATE TABLE IF NOT EXISTS posts (
   review_note text,
   author_account_id text REFERENCES accounts(id) ON DELETE SET NULL,
   newsletter_sent boolean NOT NULL DEFAULT false,
+  scheduled_at timestamptz,
   seed_likes int NOT NULL DEFAULT 0,
   seed_dislikes int NOT NULL DEFAULT 0,
   seed_rating_sum int NOT NULL DEFAULT 0,
@@ -45,6 +51,14 @@ CREATE TABLE IF NOT EXISTS posts (
 -- fresh install (the column already exists from the CREATE TABLE above).
 ALTER TABLE posts ADD COLUMN IF NOT EXISTS author_account_id text REFERENCES accounts(id) ON DELETE SET NULL;
 ALTER TABLE posts ADD COLUMN IF NOT EXISTS newsletter_sent boolean NOT NULL DEFAULT false;
+ALTER TABLE posts ADD COLUMN IF NOT EXISTS scheduled_at timestamptz;
+
+-- The CHECK constraint above only applies on a fresh CREATE TABLE — the
+-- already-deployed database needs its existing constraint swapped out to
+-- allow the new 'scheduled' status.
+ALTER TABLE posts DROP CONSTRAINT IF EXISTS posts_status_check;
+ALTER TABLE posts ADD CONSTRAINT posts_status_check
+  CHECK (status IN ('draft', 'pending', 'published', 'rejected', 'scheduled'));
 
 CREATE INDEX IF NOT EXISTS posts_author_account_id_idx ON posts(author_account_id);
 
@@ -56,11 +70,23 @@ CREATE TABLE IF NOT EXISTS comments (
   body text NOT NULL,
   mention_of text,
   visitor_id text,
+  account_id text REFERENCES accounts(id) ON DELETE SET NULL,
   created_at timestamptz NOT NULL DEFAULT now(),
   edited_at timestamptz
 );
 
+ALTER TABLE comments ADD COLUMN IF NOT EXISTS account_id text REFERENCES accounts(id) ON DELETE SET NULL;
+
 CREATE INDEX IF NOT EXISTS comments_post_slug_idx ON comments(post_slug);
+
+-- A reader flagging a comment for Ian's attention — counted by distinct
+-- reporter so the same visitor can't inflate a comment's report count.
+CREATE TABLE IF NOT EXISTS comment_reports (
+  comment_id text NOT NULL REFERENCES comments(id) ON DELETE CASCADE,
+  visitor_id text NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (comment_id, visitor_id)
+);
 
 CREATE TABLE IF NOT EXISTS comment_reactions (
   comment_id text NOT NULL REFERENCES comments(id) ON DELETE CASCADE,

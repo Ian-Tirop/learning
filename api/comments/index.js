@@ -1,4 +1,13 @@
-import { getCommentsForPost, getReactionsForComments, createComment, getPostBySlug } from '../_lib/db.js'
+import {
+  getCommentsForPost,
+  getReactionsForComments,
+  createComment,
+  getPostBySlug,
+  getCommentById,
+  getAccountById,
+} from '../_lib/db.js'
+import { getReaderAccountId } from '../_lib/auth.js'
+import { sendCommentReplyNotification, getSiteUrl } from '../_lib/email.js'
 import { withErrorHandling } from '../_lib/http.js'
 
 const MAX_COMMENT_LENGTH = 2000
@@ -59,6 +68,8 @@ async function handler(req, res) {
       return
     }
 
+    const readerAccountId = getReaderAccountId(req)
+
     const comment = await createComment({
       id: crypto.randomUUID(),
       postSlug,
@@ -67,7 +78,26 @@ async function handler(req, res) {
       text: trimmedText,
       mentionOf: typeof mentionOf === 'string' ? mentionOf.slice(0, MAX_NAME_LENGTH) : null,
       visitorId,
+      accountId: readerAccountId,
     })
+
+    // Notify whoever they're replying to, if that comment was posted by a
+    // signed-in reader (anonymous comments have no email to notify) and
+    // isn't the same person replying to themselves.
+    if (comment.parentId) {
+      const parent = await getCommentById(comment.parentId)
+      if (parent?.accountId && parent.accountId !== readerAccountId) {
+        const parentAccount = await getAccountById(parent.accountId)
+        if (parentAccount) {
+          await sendCommentReplyNotification(parentAccount.email, {
+            replierName: trimmedName,
+            commentText: trimmedText,
+            postTitle: post.title,
+            postUrl: `${getSiteUrl()}/blog/${post.slug}`,
+          })
+        }
+      }
+    }
 
     res.status(201).json({ comment: { ...comment, reactions: {} } })
     return

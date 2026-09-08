@@ -6,7 +6,7 @@ import {
   markNewsletterSent,
 } from '../_lib/db.js'
 import { isAdminRequest, requireAdmin, safeEqual, getReaderAccountId } from '../_lib/auth.js'
-import { sendPublishNotification } from '../_lib/email.js'
+import { sendPublishNotification, sendSubmissionStatusEmail } from '../_lib/email.js'
 import { withErrorHandling } from '../_lib/http.js'
 
 async function handler(req, res) {
@@ -63,10 +63,21 @@ async function handler(req, res) {
 
     if (admin) {
       const fields = {}
-      for (const key of ['title', 'excerpt', 'content', 'tags', 'cover', 'date', 'readingTime', 'link', 'reviewNote']) {
+      for (const key of [
+        'title',
+        'excerpt',
+        'content',
+        'tags',
+        'cover',
+        'date',
+        'readingTime',
+        'link',
+        'reviewNote',
+        'scheduledAt',
+      ]) {
         if (body[key] !== undefined) fields[key] = body[key]
       }
-      if (body.status && ['draft', 'published', 'pending', 'rejected'].includes(body.status)) {
+      if (body.status && ['draft', 'published', 'pending', 'rejected', 'scheduled'].includes(body.status)) {
         fields.status = body.status
       }
       const updated = await updatePostRow(slug, fields)
@@ -77,6 +88,18 @@ async function handler(req, res) {
         const emails = await getAllSubscriberEmails()
         const { sent } = await sendPublishNotification(updated, emails)
         if (sent) await markNewsletterSent(updated.slug)
+      }
+
+      // A direct, personal email to whoever submitted it — separate from
+      // the newsletter blast above, and only for an actual review
+      // decision (a pending submission being approved or rejected), not
+      // Ian's own drafts going live.
+      if (post.status === 'pending' && updated.submittedByEmail) {
+        if (updated.status === 'published') {
+          await sendSubmissionStatusEmail(updated.submittedByEmail, updated, 'published')
+        } else if (updated.status === 'rejected') {
+          await sendSubmissionStatusEmail(updated.submittedByEmail, updated, 'rejected', updated.reviewNote)
+        }
       }
 
       res.status(200).json({ post: updated })

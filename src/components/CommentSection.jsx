@@ -167,6 +167,7 @@ function CommentEntry({
   onCancelDelete,
   onConfirmDelete,
   onToggleReaction,
+  onReport,
   isReplyOpen,
   onToggleReply,
   onCancelReply,
@@ -199,6 +200,16 @@ function CommentEntry({
               <button type="button" className="comment-action-btn" onClick={onToggleReply}>
                 Reply
               </button>
+              {!entry.isOwn && (
+                <button
+                  type="button"
+                  className="comment-action-btn"
+                  onClick={onReport}
+                  aria-pressed={entry.reported}
+                >
+                  {entry.reported ? 'Reported' : 'Report'}
+                </button>
+              )}
               {entry.isOwn && (
                 <>
                   <button type="button" className="comment-action-btn" onClick={onStartEdit}>
@@ -238,6 +249,25 @@ function CommentEntry({
   )
 }
 
+const SORT_OPTIONS = [
+  { key: 'newest', label: 'Newest' },
+  { key: 'oldest', label: 'Oldest' },
+  { key: 'liked', label: 'Most liked' },
+]
+
+function sortComments(comments, sortKey) {
+  const sorted = [...comments]
+  if (sortKey === 'oldest') return sorted.sort((a, b) => new Date(a.date) - new Date(b.date))
+  if (sortKey === 'liked') {
+    return sorted.sort(
+      (a, b) =>
+        (b.reactionSummary || []).reduce((sum, r) => sum + r.count, 0) -
+        (a.reactionSummary || []).reduce((sum, r) => sum + r.count, 0),
+    )
+  }
+  return sorted.sort((a, b) => new Date(b.date) - new Date(a.date))
+}
+
 export function CommentSection({
   comments,
   addComment,
@@ -247,6 +277,7 @@ export function CommentSection({
   editReply,
   deleteReply,
   toggleReaction,
+  reportComment,
 }) {
   const [name, setName] = useState('')
   const [text, setText] = useState('')
@@ -254,8 +285,10 @@ export function CommentSection({
   const [replyingTo, setReplyingTo] = useState(null)
   const [editingId, setEditingId] = useState(null)
   const [confirmingDeleteId, setConfirmingDeleteId] = useState(null)
+  const [sortKey, setSortKey] = useState('newest')
 
   const totalCount = comments.reduce((sum, comment) => sum + 1 + comment.replies.length, 0)
+  const sortedComments = sortComments(comments, sortKey)
 
   const handleSubmit = (event) => {
     event.preventDefault()
@@ -275,12 +308,30 @@ export function CommentSection({
 
   return (
     <section className="comments">
-      <h2>
-        <svg className="icon" role="presentation" aria-hidden="true">
-          <use href="/icons.svg#comment-icon"></use>
-        </svg>
-        {totalCount} {totalCount === 1 ? 'Comment' : 'Comments'}
-      </h2>
+      <div className="comments-header">
+        <h2>
+          <svg className="icon" role="presentation" aria-hidden="true">
+            <use href="/icons.svg#comment-icon"></use>
+          </svg>
+          {totalCount} {totalCount === 1 ? 'Comment' : 'Comments'}
+        </h2>
+
+        {comments.length > 1 && (
+          <div className="comment-sort" role="group" aria-label="Sort comments">
+            {SORT_OPTIONS.map((option) => (
+              <button
+                key={option.key}
+                type="button"
+                className={`comment-sort-btn${sortKey === option.key ? ' active' : ''}`}
+                onClick={() => setSortKey(option.key)}
+                aria-pressed={sortKey === option.key}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
 
       <form className="comment-form" onSubmit={handleSubmit}>
         <input
@@ -308,7 +359,7 @@ export function CommentSection({
       </form>
 
       <ul className="comment-list">
-        {comments.map((comment) => (
+        {sortedComments.map((comment) => (
           <li key={comment.id} className="comment-thread">
             <CommentEntry
               entry={comment}
@@ -328,6 +379,7 @@ export function CommentSection({
                 setConfirmingDeleteId(null)
               }}
               onToggleReaction={(type) => toggleReaction(comment.id, type)}
+              onReport={() => reportComment(comment.id)}
               isReplyOpen={replyingTo === comment.id}
               onToggleReply={() =>
                 setReplyingTo((current) => (current === comment.id ? null : comment.id))
@@ -361,6 +413,7 @@ export function CommentSection({
                         setConfirmingDeleteId(null)
                       }}
                       onToggleReaction={(type) => toggleReaction(reply.id, type)}
+                      onReport={() => reportComment(reply.id)}
                       isReplyOpen={replyingTo === reply.id}
                       onToggleReply={() =>
                         setReplyingTo((current) => (current === reply.id ? null : reply.id))

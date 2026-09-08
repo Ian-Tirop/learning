@@ -33,16 +33,89 @@ function isConfigured() {
   return Boolean(process.env.RESEND_API_KEY && process.env.RESEND_FROM_EMAIL)
 }
 
+export function getSiteUrl() {
+  return (process.env.SITE_URL || 'https://learning-peach-two.vercel.app').replace(/\/$/, '')
+}
+
 function chunk(array, size) {
   const chunks = []
   for (let i = 0; i < array.length; i += size) chunks.push(array.slice(i, i + size))
   return chunks
 }
 
+// The single-recipient send used by every transactional email below
+// (password reset, submission status, comment replies). Same graceful
+// no-op as sendPublishNotification when Resend isn't configured.
+async function sendEmail(to, subject, html) {
+  if (!isConfigured()) return { sent: false }
+
+  const response = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({ from: process.env.RESEND_FROM_EMAIL, to, subject, html }),
+  })
+
+  if (!response.ok) {
+    const body = await response.text().catch(() => '')
+    console.error(`Resend send to ${to} failed:`, response.status, body)
+    return { sent: false }
+  }
+  return { sent: true }
+}
+
+export async function sendPasswordResetEmail(email, resetUrl) {
+  return sendEmail(
+    email,
+    'Reset your password',
+    `
+      <p>Someone (hopefully you) requested a password reset for your account on
+      ${getSiteUrl()}.</p>
+      <p><a href="${resetUrl}">Choose a new password</a></p>
+      <p style="font-size:12px;color:#666">This link expires in 30 minutes. If you didn't request this, you can ignore this email.</p>
+    `,
+  )
+}
+
+export async function sendSubmissionStatusEmail(email, post, status, reviewNote) {
+  const postUrl = `${getSiteUrl()}/blog/${post.slug}`
+  const isApproved = status === 'published'
+  return sendEmail(
+    email,
+    isApproved ? `Your post is live: ${post.title}` : `About your submission: ${post.title}`,
+    isApproved
+      ? `
+        <p>Good news — Ian approved and published your post:</p>
+        <h2><a href="${postUrl}">${post.title}</a></h2>
+        <p><a href="${postUrl}">Read it live →</a></p>
+      `
+      : `
+        <p>Ian reviewed your submission "<strong>${post.title}</strong>" and it wasn't approved this time.</p>
+        ${reviewNote ? `<p><strong>Note:</strong> ${reviewNote}</p>` : ''}
+        <p>You're welcome to revise and resubmit any time.</p>
+      `,
+  )
+}
+
+export async function sendCommentReplyNotification(email, { replierName, commentText, postTitle, postUrl }) {
+  return sendEmail(
+    email,
+    `${replierName} replied to your comment`,
+    `
+      <p><strong>${replierName}</strong> replied to your comment on
+      <a href="${postUrl}">${postTitle}</a>:</p>
+      <blockquote style="margin:8px 0;padding-left:12px;border-left:3px solid #ccc;color:#444">${commentText}</blockquote>
+      <p><a href="${postUrl}">View the conversation →</a></p>
+    `,
+  )
+}
+
 export async function sendPublishNotification(post, subscriberEmails) {
   if (!isConfigured() || subscriberEmails.length === 0) return { sent: false }
 
-  const siteUrl = (process.env.SITE_URL || 'https://learning-peach-two.vercel.app').replace(/\/$/, '')
+  const siteUrl = getSiteUrl()
   const postUrl = `${siteUrl}/blog/${post.slug}`
 
   // Individual emails (via Resend's batch endpoint — one HTTP call per

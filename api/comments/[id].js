@@ -1,4 +1,5 @@
-import { updateComment, deleteComment } from '../_lib/db.js'
+import { updateComment, deleteComment, deleteCommentAsAdmin } from '../_lib/db.js'
+import { isAdminRequest } from '../_lib/auth.js'
 import { withErrorHandling } from '../_lib/http.js'
 
 const MAX_COMMENT_LENGTH = 2000
@@ -28,6 +29,12 @@ async function handler(req, res) {
   }
 
   if (req.method === 'DELETE') {
+    if (isAdminRequest(req)) {
+      await deleteCommentAsAdmin(id)
+      res.status(204).end()
+      return
+    }
+
     const visitorId = req.query?.visitorId || req.body?.visitorId
     if (!visitorId) {
       res.status(400).json({ error: 'A visitorId is required.' })
