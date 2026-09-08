@@ -335,6 +335,133 @@
   padding-top: 8px;
 }
 
+.analytics-section {
+  margin-bottom: 40px;
+  padding-bottom: 32px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+
+  h2 {
+    font-size: 20px;
+    margin-bottom: 4px;
+  }
+}
+
+.analytics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+  margin: 20px 0 28px;
+}
+
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--code-bg);
+  text-align: left;
+  transition: border-color 0.3s var(--ease), box-shadow 0.3s var(--ease);
+
+  &:hover {
+    border-color: var(--accent-border);
+    box-shadow: var(--shadow);
+  }
+}
+
+.stat-value {
+  font-family: var(--heading);
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--text-h);
+  line-height: 1.1;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: var(--text);
+}
+
+.analytics-columns {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+
+  @media (max-width: 720px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.analytics-column {
+  h3 {
+    font-size: 15px;
+    margin-bottom: 12px;
+  }
+}
+
+.analytics-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  li {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    font-size: 14px;
+  }
+
+  a {
+    color: var(--text-h);
+    text-decoration: none;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    &:hover {
+      color: var(--accent);
+    }
+  }
+
+  span {
+    flex-shrink: 0;
+    font-size: 13px;
+    color: var(--text);
+  }
+}
+
+.recent-comments {
+  margin-top: 28px;
+}
+
+.recent-comments-list li {
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  p {
+    margin: 2px 0 0;
+    color: var(--text);
+    font-size: 13px;
+  }
+
+  span {
+    font-size: 12px;
+  }
+}
+
 @media (max-width: 640px) {
   .write-row {
     flex-wrap: wrap;

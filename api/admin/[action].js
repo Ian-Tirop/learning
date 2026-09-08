@@ -4,7 +4,15 @@
 // over that limit. A dynamic [action].js keeps the exact same URL paths
 // (/api/admin/login, /api/admin/logout, /api/admin/session) so no frontend
 // change was needed — only the routing underneath changed.
-import { createSessionToken, buildSessionCookie, buildClearCookie, isAdminRequest, safeEqual } from '../_lib/auth.js'
+import {
+  createSessionToken,
+  buildSessionCookie,
+  buildClearCookie,
+  isAdminRequest,
+  requireAdmin,
+  safeEqual,
+} from '../_lib/auth.js'
+import { getSiteAnalytics } from '../_lib/db.js'
 import { withErrorHandling } from '../_lib/http.js'
 
 async function handler(req, res) {
@@ -41,6 +49,13 @@ async function handler(req, res) {
   if (action === 'logout' && req.method === 'POST') {
     res.setHeader('Set-Cookie', buildClearCookie(req))
     res.status(200).json({ ok: true })
+    return
+  }
+
+  if (action === 'analytics' && req.method === 'GET') {
+    if (!requireAdmin(req, res)) return
+    const analytics = await getSiteAnalytics()
+    res.status(200).json(analytics)
     return
   }
 

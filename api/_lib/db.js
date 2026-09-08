@@ -424,3 +424,86 @@ export async function updateAccountProfile(id, { displayName, email }) {
 export async function updateAccountPassword(id, passwordHash) {
   await sql`UPDATE accounts SET password_hash = ${passwordHash} WHERE id = ${id}`
 }
+
+// Real numbers from what the site actually tracks (engagement + review
+// queue + accounts) — there's no page-view/traffic pipeline here, so this
+// never reports visits or unique-visitor counts, only what's genuinely in
+// the database. Reuses getAllPostsForAdmin's already-correct seed+live
+// aggregation instead of re-deriving likes/ratings in raw SQL.
+export async function getSiteAnalytics() {
+  const [allPosts, commentCountRows, totalCommentsRows, accountCountRows, recentComments] = await Promise.all([
+    getAllPostsForAdmin(null),
+    sql`SELECT post_slug, COUNT(*)::int AS count FROM comments GROUP BY post_slug`,
+    sql`SELECT COUNT(*)::int AS count FROM comments`,
+    sql`SELECT COUNT(*)::int AS count FROM accounts`,
+    sql`
+      SELECT c.id, c.name, c.body, c.post_slug, c.created_at, p.title AS post_title
+      FROM comments c
+      JOIN posts p ON p.slug = c.post_slug
+      ORDER BY c.created_at DESC
+      LIMIT 8
+    `,
+  ])
+
+  const commentCountBySlug = Object.fromEntries(commentCountRows.map((row) => [row.post_slug, row.count]))
+
+  const byStatus = { draft: 0, pending: 0, published: 0, rejected: 0 }
+  let likes = 0
+  let dislikes = 0
+  let ratingSum = 0
+  let ratingCount = 0
+  for (const post of allPosts) {
+    byStatus[post.status] = (byStatus[post.status] || 0) + 1
+    likes += post.seed.likes
+    dislikes += post.seed.dislikes
+    ratingSum += post.seed.ratingSum
+    ratingCount += post.seed.ratingCount
+  }
+
+  const published = allPosts.filter((post) => post.status === 'published')
+
+  const topLiked = [...published]
+    .sort((a, b) => b.seed.likes - a.seed.likes)
+    .slice(0, 5)
+    .map((post) => ({ slug: post.slug, title: post.title, likes: post.seed.likes }))
+
+  const topCommented = published
+    .map((post) => ({ slug: post.slug, title: post.title, comments: commentCountBySlug[post.slug] || 0 }))
+    .sort((a, b) => b.comments - a.comments)
+    .slice(0, 5)
+
+  const topRated = [...published]
+    .filter((post) => post.seed.ratingCount > 0)
+    .sort((a, b) => b.seed.ratingSum / b.seed.ratingCount - a.seed.ratingSum / a.seed.ratingCount)
+    .slice(0, 5)
+    .map((post) => ({
+      slug: post.slug,
+      title: post.title,
+      average: post.seed.ratingSum / post.seed.ratingCount,
+      count: post.seed.ratingCount,
+    }))
+
+  return {
+    totals: {
+      posts: allPosts.length,
+      byStatus,
+      comments: totalCommentsRows[0].count,
+      accounts: accountCountRows[0].count,
+      likes,
+      dislikes,
+      averageRating: ratingCount > 0 ? ratingSum / ratingCount : 0,
+      ratingCount,
+    },
+    topLiked,
+    topCommented,
+    topRated,
+    recentComments: recentComments.map((row) => ({
+      id: row.id,
+      name: row.name,
+      text: row.body,
+      postSlug: row.post_slug,
+      postTitle: row.post_title,
+      createdAt: row.created_at,
+    })),
+  }
+}

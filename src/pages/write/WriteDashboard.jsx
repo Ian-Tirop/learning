@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { deletePost, getAllPosts, updatePost } from '../../data/postStore'
+import { getAnalytics } from '../../data/adminStore'
 import { PostCover } from '../../components/PostCover'
 import { useDocumentTitle } from '../../hooks/useDocumentTitle'
 import { useMetaRobots } from '../../hooks/useMetaRobots'
@@ -9,6 +10,146 @@ import { formatDate } from '../../lib/formatDate'
 import './Write.css'
 
 const STATUS_LABEL = { draft: 'Draft', published: 'Published', pending: 'Pending review', rejected: 'Rejected' }
+
+function AnalyticsSection() {
+  const [data, setData] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    getAnalytics()
+      .then(setData)
+      .catch(() => setData(null))
+      .finally(() => setLoading(false))
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="analytics-section">
+        <p className="loading-note">Loading analytics…</p>
+      </div>
+    )
+  }
+
+  if (!data) return null
+
+  const { totals, topLiked, topCommented, topRated, recentComments } = data
+
+  return (
+    <div className="analytics-section">
+      <h2>Analytics</h2>
+      <p className="write-intro">
+        Real numbers from your database — engagement, review queue, and reader accounts. There's no
+        page-view tracking on this site, so this won&apos;t show visits or traffic.
+      </p>
+
+      <div className="analytics-grid">
+        <div className="stat-card">
+          <span className="stat-value">{totals.posts}</span>
+          <span className="stat-label">Total posts</span>
+        </div>
+        <div className="stat-card">
+          <span className="stat-value">{totals.byStatus.published || 0}</span>
+          <span className="stat-label">Published</span>
+        </div>
+        <div className="stat-card">
+          <span className="stat-value">{totals.byStatus.pending || 0}</span>
+          <span className="stat-label">Pending review</span>
+        </div>
+        <div className="stat-card">
+          <span className="stat-value">{totals.byStatus.rejected || 0}</span>
+          <span className="stat-label">Rejected</span>
+        </div>
+        <div className="stat-card">
+          <span className="stat-value">{totals.byStatus.draft || 0}</span>
+          <span className="stat-label">Drafts</span>
+        </div>
+        <div className="stat-card">
+          <span className="stat-value">{totals.comments}</span>
+          <span className="stat-label">Comments</span>
+        </div>
+        <div className="stat-card">
+          <span className="stat-value">{totals.accounts}</span>
+          <span className="stat-label">Reader accounts</span>
+        </div>
+        <div className="stat-card">
+          <span className="stat-value">{totals.likes}</span>
+          <span className="stat-label">Likes</span>
+        </div>
+        <div className="stat-card">
+          <span className="stat-value">{totals.dislikes}</span>
+          <span className="stat-label">Dislikes</span>
+        </div>
+        <div className="stat-card">
+          <span className="stat-value">
+            {totals.ratingCount > 0 ? totals.averageRating.toFixed(1) : '—'}
+          </span>
+          <span className="stat-label">Avg. rating ({totals.ratingCount})</span>
+        </div>
+      </div>
+
+      <div className="analytics-columns">
+        <div className="analytics-column">
+          <h3>Most liked</h3>
+          {topLiked.length === 0 && <p className="write-intro">Nothing published yet.</p>}
+          <ul className="analytics-list">
+            {topLiked.map((post) => (
+              <li key={post.slug}>
+                <Link to={`/blog/${post.slug}`}>{post.title}</Link>
+                <span>{post.likes} 👍</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="analytics-column">
+          <h3>Most commented</h3>
+          {topCommented.length === 0 && <p className="write-intro">Nothing published yet.</p>}
+          <ul className="analytics-list">
+            {topCommented.map((post) => (
+              <li key={post.slug}>
+                <Link to={`/blog/${post.slug}`}>{post.title}</Link>
+                <span>{post.comments} 💬</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="analytics-column">
+          <h3>Top rated</h3>
+          {topRated.length === 0 && <p className="write-intro">No ratings yet.</p>}
+          <ul className="analytics-list">
+            {topRated.map((post) => (
+              <li key={post.slug}>
+                <Link to={`/blog/${post.slug}`}>{post.title}</Link>
+                <span>
+                  {post.average.toFixed(1)} ★ ({post.count})
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+
+      {recentComments.length > 0 && (
+        <div className="analytics-column recent-comments">
+          <h3>Recent comments</h3>
+          <ul className="analytics-list recent-comments-list">
+            {recentComments.map((comment) => (
+              <li key={comment.id}>
+                <div>
+                  <strong>{comment.name}</strong> on{' '}
+                  <Link to={`/blog/${comment.postSlug}`}>{comment.postTitle}</Link>
+                  <p>{comment.text}</p>
+                </div>
+                <span>{formatDate(comment.createdAt)}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  )
+}
 
 export function WriteDashboard() {
   useDocumentTitle('Write — Ian Tirop')
@@ -73,6 +214,8 @@ export function WriteDashboard() {
           New post
         </Link>
       </div>
+
+      <AnalyticsSection />
 
       {pending.length > 0 && (
         <div className="write-pending">

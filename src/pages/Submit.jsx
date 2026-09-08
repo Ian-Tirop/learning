@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams, useSearchParams } from 'react-router-dom'
+import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom'
 import { createPost, getPostBySlug, updatePost } from '../data/postStore'
 import { coverPresets } from '../data/coverPresets'
 import { parsePostBody, serializePostBody } from '../lib/postBody'
 import { estimateReadingTime } from '../lib/estimateReadingTime'
 import { getMySubmissions, addMySubmission } from '../lib/mySubmissions'
 import { useAccount } from '../context/AccountContext'
+import { useAdmin } from '../context/AdminContext'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { useMetaRobots } from '../hooks/useMetaRobots'
 import './write/Write.css'
@@ -21,6 +22,7 @@ export function Submit() {
   const token = searchParams.get('token') || ''
   const isEdit = Boolean(slug)
   const { account, loading: accountLoading } = useAccount()
+  const { effectiveIsAdmin } = useAdmin()
 
   useDocumentTitle(isEdit ? 'Edit your submission — Ian Tirop' : 'Submit a post — Ian Tirop')
   useMetaRobots()
@@ -121,6 +123,14 @@ export function Submit() {
     } finally {
       setSaving(false)
     }
+  }
+
+  // Ian doesn't submit-for-review — he writes and publishes directly. Only
+  // redirect the fresh-submission entry point (not /submit/edit/:slug,
+  // which he'd never be linked to anyway); reader-preview mode leaves
+  // effectiveIsAdmin false, so it still shows the real reader page there.
+  if (!isEdit && effectiveIsAdmin) {
+    return <Navigate to="/write/new" replace />
   }
 
   if (isEdit && (loadingExisting || (existing && accountLoading))) {
