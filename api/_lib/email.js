@@ -99,6 +99,15 @@ export async function sendSubmissionStatusEmail(email, post, status, reviewNote)
   )
 }
 
+// A short heads-up to the admin's own recovery email (api/admin/[action].js's
+// recovery-email setting) when something security-relevant changes on the
+// admin account — 2FA turned on/off, etc. Best-effort: never blocks the
+// action it's reporting on if it fails or Resend isn't configured.
+export async function sendAdminSecurityAlert(adminEmail, subject, message) {
+  if (!adminEmail) return { sent: false }
+  return sendEmail(adminEmail, subject, `<p>${message}</p><p style="font-size:12px;color:#666">${getSiteUrl()}</p>`)
+}
+
 export async function sendCommentReplyNotification(email, { replierName, commentText, postTitle, postUrl }) {
   return sendEmail(
     email,

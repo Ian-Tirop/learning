@@ -29,3 +29,11 @@ export async function confirmTwoFactorSetup(code) {
 export async function disableTwoFactor(code) {
   return api.post('/api/admin/two-factor-disable', { code })
 }
+
+export async function getRecoveryEmail() {
+  return api.get('/api/admin/recovery-email')
+}
+
+export async function setRecoveryEmail(email) {
+  return api.post('/api/admin/recovery-email', { email })
+}

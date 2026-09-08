@@ -7,6 +7,8 @@ import {
   startTwoFactorSetup,
   confirmTwoFactorSetup,
   disableTwoFactor,
+  getRecoveryEmail,
+  setRecoveryEmail,
 } from '../../data/adminStore'
 import { useDocumentTitle } from '../../hooks/useDocumentTitle'
 import { useMetaRobots } from '../../hooks/useMetaRobots'
@@ -179,18 +181,75 @@ function DisableFlow({ onDisabled }) {
   )
 }
 
+function RecoveryEmailForm({ currentEmail, onSaved }) {
+  const showToast = useToast()
+  const [email, setEmail] = useState(currentEmail || '')
+  const [error, setError] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  const handleSubmit = async (event) => {
+    event.preventDefault()
+    setSaving(true)
+    setError('')
+    try {
+      await setRecoveryEmail(email.trim())
+      showToast('Recovery email saved', { type: 'success' })
+      onSaved(email.trim())
+    } catch (err) {
+      setError(err.message || 'Could not save that.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="security-card">
+      <p className="write-intro">
+        A recovery email gets a heads-up whenever two-factor authentication is turned on or off on
+        your admin login — useful if that ever happens without you.
+      </p>
+      <form className="login-form" onSubmit={handleSubmit}>
+        <label className="field">
+          <span>Recovery email</span>
+          <input
+            type="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            placeholder="you@example.com"
+          />
+        </label>
+        {error && (
+          <p className="comment-error" role="alert">
+            {error}
+          </p>
+        )}
+        <button type="submit" className="btn btn-ghost" disabled={saving}>
+          {saving ? 'Saving…' : 'Save recovery email'}
+        </button>
+      </form>
+    </div>
+  )
+}
+
 export function Security() {
   useDocumentTitle('Security — Ian Tirop')
   useMetaRobots()
   const { isAdmin, loading: authLoading } = useAdmin()
 
   const [enabled, setEnabled] = useState(null)
+  const [recoveryEmail, setRecoveryEmailState] = useState(null)
   const [loading, setLoading] = useState(true)
 
   const refresh = () => {
     setLoading(true)
-    getTwoFactorStatus()
-      .then((data) => setEnabled(data.enabled))
+    Promise.all([
+      getTwoFactorStatus().then((data) => data.enabled),
+      getRecoveryEmail().then((data) => data.email),
+    ])
+      .then(([twoFactorEnabled, email]) => {
+        setEnabled(twoFactorEnabled)
+        setRecoveryEmailState(email)
+      })
       .catch(() => setEnabled(false))
       .finally(() => setLoading(false))
   }
@@ -210,14 +269,18 @@ export function Security() {
           <p className="eyebrow">Write</p>
           <h1>Security</h1>
           <p className="write-intro">
-            Two-factor authentication for your admin login. Lost your authenticator app and your
-            backup codes? Ask me (Claude) to clear it directly from the database — that&apos;s the
-            fallback recovery path since there&apos;s no email tied to the admin login.
+            Two-factor authentication for your admin login.{' '}
+            {recoveryEmail
+              ? `Security alerts go to ${recoveryEmail}.`
+              : "Lost your authenticator app and your backup codes? Ask me (Claude) to clear it directly from the database — that's the fallback recovery path with no recovery email set."}
           </p>
         </div>
       </div>
 
       {loading && <p className="loading-note">Loading…</p>}
+      {!loading && (
+        <RecoveryEmailForm currentEmail={recoveryEmail} onSaved={setRecoveryEmailState} />
+      )}
       {!loading && enabled === false && <SetupFlow onEnabled={refresh} />}
       {!loading && enabled === true && <DisableFlow onDisabled={refresh} />}
     </section>

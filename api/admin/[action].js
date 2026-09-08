@@ -27,7 +27,7 @@ import {
   setAdminSetting,
   deleteAdminSetting,
 } from '../_lib/db.js'
-import { sendPublishNotification } from '../_lib/email.js'
+import { sendPublishNotification, sendAdminSecurityAlert } from '../_lib/email.js'
 import { generateTotpSecret, otpauthUrl, verifyTotpCode } from '../_lib/totp.js'
 import { withErrorHandling } from '../_lib/http.js'
 
@@ -154,6 +154,13 @@ async function handler(req, res) {
     await setAdminSetting('totp_backup_codes', JSON.stringify(backupCodes.map((c) => hashPassword(c))))
     await deleteAdminSetting('totp_secret_pending')
 
+    const recoveryEmail = await getAdminSetting('admin_email')
+    await sendAdminSecurityAlert(
+      recoveryEmail,
+      'Two-factor authentication turned on',
+      'Two-factor authentication was just enabled on your admin login. If this wasn’t you, someone has access to your admin session — log in and check immediately.',
+    )
+
     res.status(200).json({ ok: true, backupCodes })
     return
   }
@@ -169,6 +176,33 @@ async function handler(req, res) {
     await deleteAdminSetting('totp_enabled')
     await deleteAdminSetting('totp_backup_codes')
     await deleteAdminSetting('totp_secret_pending')
+
+    const recoveryEmail = await getAdminSetting('admin_email')
+    await sendAdminSecurityAlert(
+      recoveryEmail,
+      'Two-factor authentication turned off',
+      'Two-factor authentication was just disabled on your admin login. If this wasn’t you, someone has access to your admin session — log in, re-enable it, and change your admin password.',
+    )
+
+    res.status(200).json({ ok: true })
+    return
+  }
+
+  if (action === 'recovery-email' && req.method === 'GET') {
+    if (!requireAdmin(req, res)) return
+    res.status(200).json({ email: await getAdminSetting('admin_email') })
+    return
+  }
+
+  if (action === 'recovery-email' && req.method === 'POST') {
+    if (!requireAdmin(req, res)) return
+    const { email } = req.body || {}
+    const trimmed = typeof email === 'string' ? email.trim().toLowerCase() : ''
+    if (!trimmed || !trimmed.includes('@')) {
+      res.status(400).json({ error: 'A valid email is required.' })
+      return
+    }
+    await setAdminSetting('admin_email', trimmed)
     res.status(200).json({ ok: true })
     return
   }
