@@ -20,6 +20,17 @@ export function NavSearch() {
     }
   }, [open])
 
+  useEffect(() => {
+    const handleGlobalKeyDown = (event) => {
+      if (event.key.toLowerCase() === 'k' && (event.metaKey || event.ctrlKey)) {
+        event.preventDefault()
+        setOpen((o) => !o)
+      }
+    }
+    window.addEventListener('keydown', handleGlobalKeyDown)
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown)
+  }, [])
+
   const close = () => {
     setOpen(false)
     setQuery('')
@@ -55,7 +66,7 @@ export function NavSearch() {
         aria-expanded={open}
         aria-label="Search posts"
         aria-controls="nav-search-panel"
-        title="Search"
+        title="Search (⌘K)"
       >
         <svg className="icon" role="presentation" aria-hidden="true">
           <use href="/icons.svg#search-icon"></use>

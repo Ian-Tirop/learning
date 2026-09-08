@@ -33,6 +33,7 @@ function BlogPostView({ slug }) {
   const [post, setPost] = useState(null)
   const [notFound, setNotFound] = useState(false)
   const [related, setRelated] = useState([])
+  const [activeHeadingId, setActiveHeadingId] = useState(null)
 
   useEffect(() => {
     let cancelled = false
@@ -65,6 +66,24 @@ function BlogPostView({ slug }) {
   useMetaDescription(post?.excerpt || "Ian Tirop's blog — notes on code, design, and building things on the web.")
   useCanonicalUrl()
   useMetaRobots(post && post.status !== 'published' ? 'noindex, nofollow' : 'index, follow')
+
+  const headingIds = post ? getHeadings(post.content).map((h) => h.id) : []
+  useEffect(() => {
+    if (headingIds.length === 0) return
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries.filter((entry) => entry.isIntersecting)
+        if (visible.length > 0) setActiveHeadingId(visible[0].target.id)
+      },
+      { rootMargin: '-84px 0px -70% 0px' },
+    )
+    headingIds.forEach((id) => {
+      const el = document.getElementById(id)
+      if (el) observer.observe(el)
+    })
+    return () => observer.disconnect()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [post?.slug, headingIds.length])
 
   if (notFound) {
     return <Navigate to="/blog" replace />
@@ -136,7 +155,12 @@ function BlogPostView({ slug }) {
           <ul>
             {headings.map((heading) => (
               <li key={heading.id}>
-                <a href={`#${heading.id}`}>{heading.text}</a>
+                <a
+                  href={`#${heading.id}`}
+                  className={heading.id === activeHeadingId ? 'active' : undefined}
+                >
+                  {heading.text}
+                </a>
               </li>
             ))}
           </ul>

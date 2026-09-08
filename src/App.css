@@ -218,8 +218,17 @@
     font-style: italic;
   }
 
-  pre {
+  .code-block {
+    position: relative;
     margin: 0 0 18px;
+
+    &:hover .code-copy-btn {
+      opacity: 1;
+    }
+  }
+
+  pre {
+    margin: 0;
     padding: 16px 18px;
     border-radius: 10px;
     background: var(--code-bg);
@@ -236,6 +245,92 @@
     background: none;
     padding: 0;
     white-space: pre;
+  }
+
+  .code-copy-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: var(--sans);
+    color: var(--text);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s var(--ease), color 0.2s var(--ease), border-color 0.2s var(--ease);
+
+    &:hover {
+      color: var(--accent);
+      border-color: var(--accent-border);
+    }
+
+    &:focus-visible {
+      opacity: 1;
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+  }
+
+  /* Syntax highlighting (highlight.js token classes), mapped onto the
+     site's own palette — no new colors introduced. */
+  .hljs-comment,
+  .hljs-quote {
+    color: var(--text);
+    font-style: italic;
+  }
+
+  .hljs-keyword,
+  .hljs-selector-tag,
+  .hljs-tag,
+  .hljs-literal {
+    color: var(--accent);
+  }
+
+  .hljs-string,
+  .hljs-attr,
+  .hljs-template-tag,
+  .hljs-regexp {
+    color: var(--accent-2);
+  }
+
+  .hljs-title,
+  .hljs-function,
+  .hljs-title.function_,
+  .hljs-built_in {
+    color: var(--accent-3);
+  }
+
+  .hljs-number,
+  .hljs-symbol,
+  .hljs-bullet {
+    color: var(--accent-2);
+  }
+
+  .hljs-name,
+  .hljs-attribute,
+  .hljs-variable,
+  .hljs-params {
+    color: var(--text-h);
+  }
+
+  .hljs-deletion {
+    color: var(--danger);
+  }
+
+  .hljs-addition {
+    color: var(--success);
+  }
+
+  .hljs-emphasis {
+    font-style: italic;
+  }
+
+  .hljs-strong {
+    font-weight: 700;
   }
 }
 

@@ -21,6 +21,7 @@ export function PostEngagement({
   const [hoverRating, setHoverRating] = useState(0)
   const [copied, setCopied] = useState(false)
   const [saveError, setSaveError] = useState(false)
+  const [shareOpen, setShareOpen] = useState(false)
 
   const handleToggleSave = async () => {
     try {
@@ -33,7 +34,9 @@ export function PostEngagement({
 
   const displayedStars = hoverRating || userRating || Math.round(average)
   const shareUrl = `${window.location.origin}/blog/${post.slug}`
-  const shareText = encodeURIComponent(`"${post.title}" — worth a read.`)
+  const shareTitle = `"${post.title}" — worth a read.`
+  const shareText = encodeURIComponent(shareTitle)
+  const canNativeShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function'
 
   const handleCopyLink = async () => {
     try {
@@ -43,6 +46,19 @@ export function PostEngagement({
     } catch {
       // Clipboard access can be denied or unavailable (e.g. insecure context) — fail silently.
     }
+  }
+
+  const handleNativeShare = async () => {
+    setShareOpen(false)
+    try {
+      await navigator.share({ title: post.title, text: shareTitle, url: shareUrl })
+    } catch {
+      // The user cancelled the native share sheet, or it's unsupported here — no-op either way.
+    }
+  }
+
+  const handleShareBlur = (event) => {
+    if (!event.currentTarget.contains(event.relatedTarget)) setShareOpen(false)
   }
 
   return (
@@ -100,17 +116,75 @@ export function PostEngagement({
             </svg>
             {copied ? 'Copied!' : 'Copy link'}
           </button>
-          <a
-            className="btn btn-ghost"
-            target="_blank"
-            rel="noreferrer"
-            href={`https://x.com/intent/post?text=${shareText}&url=${encodeURIComponent(shareUrl)}`}
-          >
-            <svg className="icon" role="presentation" aria-hidden="true">
-              <use href="/icons.svg#x-icon"></use>
-            </svg>
-            Share
-          </a>
+
+          <div className="share-menu-wrap" onBlur={handleShareBlur}>
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={() => setShareOpen((open) => !open)}
+              aria-expanded={shareOpen}
+              aria-haspopup="menu"
+            >
+              <svg className="icon" role="presentation" aria-hidden="true">
+                <use href="/icons.svg#share-icon"></use>
+              </svg>
+              Share
+            </button>
+
+            {shareOpen && (
+              <div className="share-menu" role="menu">
+                {canNativeShare && (
+                  <button type="button" role="menuitem" onClick={handleNativeShare}>
+                    Share…
+                  </button>
+                )}
+                <a
+                  role="menuitem"
+                  target="_blank"
+                  rel="noreferrer"
+                  href={`https://x.com/intent/post?text=${shareText}&url=${encodeURIComponent(shareUrl)}`}
+                >
+                  <svg className="icon" role="presentation" aria-hidden="true">
+                    <use href="/icons.svg#x-icon"></use>
+                  </svg>
+                  X
+                </a>
+                <a
+                  role="menuitem"
+                  target="_blank"
+                  rel="noreferrer"
+                  href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`}
+                >
+                  <svg className="icon" role="presentation" aria-hidden="true">
+                    <use href="/icons.svg#linkedin-icon"></use>
+                  </svg>
+                  LinkedIn
+                </a>
+                <a
+                  role="menuitem"
+                  target="_blank"
+                  rel="noreferrer"
+                  href={`https://www.reddit.com/submit?url=${encodeURIComponent(shareUrl)}&title=${shareText}`}
+                >
+                  Reddit
+                </a>
+                <a
+                  role="menuitem"
+                  target="_blank"
+                  rel="noreferrer"
+                  href={`https://wa.me/?text=${shareText}%20${encodeURIComponent(shareUrl)}`}
+                >
+                  WhatsApp
+                </a>
+                <a role="menuitem" href={`mailto:?subject=${shareText}&body=${encodeURIComponent(shareUrl)}`}>
+                  <svg className="icon" role="presentation" aria-hidden="true">
+                    <use href="/icons.svg#mail-icon"></use>
+                  </svg>
+                  Email
+                </a>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

@@ -9,17 +9,9 @@ import { useMetaDescription } from '../hooks/useMetaDescription'
 import { useCanonicalUrl } from '../hooks/useCanonicalUrl'
 import { formatDate } from '../lib/formatDate'
 import { getMostLiked } from '../lib/postRanking'
+import { getTagCounts } from '../lib/tagCounts'
 import { isRecent } from '../lib/isRecent'
 import './Home.css'
-
-const topics = [
-  'UI/UX design',
-  'CSS & layout',
-  'React',
-  'Design systems',
-  'Dev habits',
-  'Side projects',
-]
 
 export function Home() {
   useDocumentTitle('Ian Tirop — Blog')
@@ -51,6 +43,7 @@ export function Home() {
 
   const latest = posts.slice(0, 3)
   const favorites = getMostLiked(posts, 3, latest)
+  const topTags = getTagCounts(posts).slice(0, 6)
 
   return (
     <>
@@ -124,11 +117,14 @@ export default function IanTirop() {
       </section>
 
       <section id="topics" className="container topics-row" aria-label="Topics I write about">
-        {topics.map((topic) => (
-          <span key={topic} className="tag">
-            {topic}
-          </span>
+        {topTags.map(({ tag, count }) => (
+          <Link key={tag} to={`/blog?tag=${encodeURIComponent(tag)}`} className="tag">
+            {tag} <span className="tag-count">{count}</span>
+          </Link>
         ))}
+        <Link to="/topics" className="tag topics-see-all">
+          All topics →
+        </Link>
       </section>
 
       <section className="container latest-section">

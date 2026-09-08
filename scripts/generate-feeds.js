@@ -32,7 +32,7 @@ async function loadPublishedPosts() {
   try {
     const { neon } = await import('@neondatabase/serverless')
     const sql = neon(connectionString)
-    const rows = await sql`SELECT slug, title, excerpt, date FROM posts WHERE status = 'published' ORDER BY date DESC`
+    const rows = await sql`SELECT slug, title, excerpt, date, content FROM posts WHERE status = 'published' ORDER BY date DESC`
     return rows
   } catch (error) {
     console.warn('[generate-feeds] Could not reach the database, falling back to static seed posts:', error.message)
@@ -67,6 +67,22 @@ function buildSitemap(published) {
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`
 }
 
+// Content blocks -> plain HTML for the feed's full-content field. Kept
+// deliberately simple (no syntax highlighting, no copy button) since feed
+// readers render HTML in wildly different, JS-free contexts.
+function contentToHtml(content) {
+  if (!Array.isArray(content)) return ''
+  return content
+    .map((block) => {
+      const text = escapeXml(block.text || '')
+      if (block.type === 'h3') return `<h3>${text}</h3>`
+      if (block.type === 'quote') return `<blockquote>${text}</blockquote>`
+      if (block.type === 'code') return `<pre><code>${text}</code></pre>`
+      return `<p>${text}</p>`
+    })
+    .join('\n')
+}
+
 function buildRss(published) {
   const items = published
     .map(
@@ -76,12 +92,13 @@ function buildRss(published) {
     <guid>${escapeXml(`${siteUrl}/blog/${post.slug}`)}</guid>
     <pubDate>${new Date(post.date).toUTCString()}</pubDate>
     <description>${escapeXml(post.excerpt)}</description>
+    <content:encoded><![CDATA[${contentToHtml(post.content)}]]></content:encoded>
   </item>`,
     )
     .join('\n')
 
   return `<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0">
+<rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/">
 <channel>
   <title>Ian Tirop — Blog</title>
   <link>${escapeXml(siteUrl)}</link>

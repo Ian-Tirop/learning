@@ -89,6 +89,14 @@
     <circle cx="10" cy="6.6" r="3.1" fill="none" stroke="currentColor" stroke-width="1.4"/>
     <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.4" d="M3.6 17c.5-3.6 3.4-6.1 6.4-6.1s5.9 2.5 6.4 6.1"/>
   </symbol>
+  <symbol id="share-icon" viewBox="0 0 20 20">
+    <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.4">
+      <circle cx="15.5" cy="4.5" r="2"/>
+      <circle cx="15.5" cy="15.5" r="2"/>
+      <circle cx="4.5" cy="10" r="2"/>
+      <path d="M6.3 8.9 13.7 5.6M6.3 11.1l7.4 3.3"/>
+    </g>
+  </symbol>
   <symbol id="chevron-icon" viewBox="0 0 20 20">
     <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M5 7.5 10 12.5 15 7.5"/>
   </symbol>
