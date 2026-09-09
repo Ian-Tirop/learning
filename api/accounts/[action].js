@@ -18,6 +18,8 @@ import {
   getPostsForAccount,
   getLikedPostsForAccount,
   getSavedPostsForAccount,
+  toggleFollow,
+  getFollowedAccounts,
 } from '../_lib/db.js'
 import {
   hashPassword,
@@ -125,6 +127,37 @@ async function handleSavedPosts(req, res) {
   }
   const posts = await getSavedPostsForAccount(accountId)
   res.status(200).json({ posts })
+}
+
+async function handleFollowToggle(req, res) {
+  const accountId = getReaderAccountId(req)
+  if (!accountId) {
+    res.status(401).json({ error: 'Sign in to follow a writer.' })
+    return
+  }
+
+  const writerId = typeof req.body?.writerId === 'string' ? req.body.writerId : ''
+  if (!writerId) {
+    res.status(400).json({ error: 'A writerId is required.' })
+    return
+  }
+  if (writerId === accountId) {
+    res.status(400).json({ error: "You can't follow yourself." })
+    return
+  }
+
+  const result = await toggleFollow(accountId, writerId)
+  res.status(200).json(result)
+}
+
+async function handleFollowing(req, res) {
+  const accountId = getReaderAccountId(req)
+  if (!accountId) {
+    res.status(401).json({ error: 'Sign in to see who you follow.' })
+    return
+  }
+  const accounts = await getFollowedAccounts(accountId)
+  res.status(200).json({ accounts })
 }
 
 async function handleUpdateProfile(req, res) {
@@ -236,6 +269,8 @@ async function handler(req, res) {
   if (action === 'my-posts' && req.method === 'GET') return handleMyPosts(req, res)
   if (action === 'liked-posts' && req.method === 'GET') return handleLikedPosts(req, res)
   if (action === 'saved-posts' && req.method === 'GET') return handleSavedPosts(req, res)
+  if (action === 'follow-toggle' && req.method === 'POST') return handleFollowToggle(req, res)
+  if (action === 'following' && req.method === 'GET') return handleFollowing(req, res)
   if (action === 'update-profile' && req.method === 'POST') return handleUpdateProfile(req, res)
   if (action === 'change-password' && req.method === 'POST') return handleChangePassword(req, res)
   if (action === 'forgot-password' && req.method === 'POST') return handleForgotPassword(req, res)

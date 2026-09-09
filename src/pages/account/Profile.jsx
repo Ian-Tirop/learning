@@ -1,14 +1,16 @@
 import { useEffect, useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
-import { getMyPosts, getLikedPosts, getSavedPosts } from '../../data/accountStore'
+import { getMyPosts, getLikedPosts, getSavedPosts, getFollowing, toggleFollow } from '../../data/accountStore'
 import { getAllPosts } from '../../data/postStore'
 import { getRecommendedPosts } from '../../lib/postRanking'
 import { PostCover } from '../../components/PostCover'
 import { useAccount } from '../../context/AccountContext'
+import { useToast } from '../../context/ToastContext'
 import { useDocumentTitle } from '../../hooks/useDocumentTitle'
 import { useMetaRobots } from '../../hooks/useMetaRobots'
 import { useCountUp } from '../../hooks/useCountUp'
 import { formatDate } from '../../lib/formatDate'
+import { initials } from '../../lib/initials'
 import '../write/Write.css'
 import './Account.css'
 
@@ -19,18 +21,9 @@ const TABS = [
   { key: 'submissions', label: 'Submissions', icon: 'pencil-icon' },
   { key: 'liked', label: 'Liked', icon: 'thumb-up-icon' },
   { key: 'saved', label: 'Saved', icon: 'bookmark-icon' },
+  { key: 'following', label: 'Following', icon: 'star-icon' },
   { key: 'settings', label: 'Settings', icon: 'user-icon' },
 ]
-
-function initials(name) {
-  if (!name) return '?'
-  return name
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part[0].toUpperCase())
-    .join('')
-}
 
 function StatValue({ value }) {
   const animated = useCountUp(value)
@@ -51,6 +44,29 @@ function ArticleRow({ post }) {
         <Link to={`/blog/${post.slug}`} className="comment-action-btn">
           Read
         </Link>
+      </div>
+    </li>
+  )
+}
+
+function WriterRow({ writer, onUnfollow }) {
+  return (
+    <li className="write-row">
+      <div className="profile-avatar profile-avatar-sm" aria-hidden="true">
+        {initials(writer.displayName)}
+      </div>
+      <div className="write-row-main">
+        <div className="write-row-title">
+          <h2>{writer.displayName}</h2>
+        </div>
+        <p className="write-row-meta">
+          {writer.postCount} published {writer.postCount === 1 ? 'post' : 'posts'}
+        </p>
+      </div>
+      <div className="write-row-actions">
+        <button type="button" className="comment-action-btn" onClick={() => onUnfollow(writer.id)}>
+          Unfollow
+        </button>
       </div>
     </li>
   )
@@ -203,13 +219,22 @@ export function Profile() {
   useDocumentTitle('Your profile — Ian Tirop')
   useMetaRobots()
   const { account, loading: authLoading, logout, updateProfile, changePassword } = useAccount()
+  const showToast = useToast()
 
   const [posts, setPosts] = useState([])
   const [liked, setLiked] = useState([])
   const [savedArticles, setSavedArticles] = useState([])
+  const [following, setFollowing] = useState([])
   const [recommended, setRecommended] = useState([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('overview')
+
+  const handleUnfollow = async (writerId) => {
+    const writer = following.find((w) => w.id === writerId)
+    await toggleFollow(writerId)
+    setFollowing((current) => current.filter((w) => w.id !== writerId))
+    if (writer) showToast(`Unfollowed ${writer.displayName}`)
+  }
 
   useEffect(() => {
     if (!account) return
@@ -217,12 +242,14 @@ export function Profile() {
       getMyPosts().catch(() => []),
       getLikedPosts().catch(() => []),
       getSavedPosts().catch(() => []),
+      getFollowing().catch(() => []),
       getAllPosts().catch(() => []),
     ])
-      .then(([myPosts, likedPosts, saved, allPublished]) => {
+      .then(([myPosts, likedPosts, saved, followedWriters, allPublished]) => {
         setPosts(myPosts)
         setLiked(likedPosts)
         setSavedArticles(saved)
+        setFollowing(followedWriters)
 
         // Personalized picks: scored against everything they've liked/saved,
         // excluding those same posts and anything they wrote themselves.
@@ -285,6 +312,10 @@ export function Profile() {
         <button type="button" className="stat-card" onClick={() => setActiveTab('saved')}>
           <StatValue value={savedArticles.length} />
           <span className="stat-label">Saved</span>
+        </button>
+        <button type="button" className="stat-card" onClick={() => setActiveTab('following')}>
+          <StatValue value={following.length} />
+          <span className="stat-label">Following</span>
         </button>
         <button type="button" className="stat-card" onClick={() => setActiveTab('overview')}>
           <StatValue value={recommended.length} />
@@ -394,6 +425,21 @@ export function Profile() {
           <ul className="write-list">
             {savedArticles.map((post) => (
               <ArticleRow key={post.slug} post={post} />
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {activeTab === 'following' && (
+        <div className="profile-panel">
+          <h2 className="profile-section-title">Writers you follow {!loading && `(${following.length})`}</h2>
+          <p className="write-intro">
+            Follow a writer from any of their posts to keep track of new ones here.
+          </p>
+          {!loading && following.length === 0 && <p className="write-intro">⭐ Not following anyone yet.</p>}
+          <ul className="write-list">
+            {following.map((writer) => (
+              <WriterRow key={writer.id} writer={writer} onUnfollow={handleUnfollow} />
             ))}
           </ul>
         </div>

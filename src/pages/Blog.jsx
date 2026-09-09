@@ -137,6 +137,7 @@ export function Blog() {
               <div className="post-row-meta">
                 <span>{formatDate(post.date)}</span>
                 <span>{post.readingTime} min read</span>
+                {post.submittedByName && <span>by {post.submittedByName}</span>}
               </div>
             </Link>
           </li>

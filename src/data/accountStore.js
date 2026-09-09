@@ -40,6 +40,17 @@ export async function getSavedPosts() {
   return data.posts
 }
 
+/** Follows/unfollows a writer (by account id), returning the new state. */
+export async function toggleFollow(writerId) {
+  return api.post('/api/accounts/follow-toggle', { writerId })
+}
+
+/** Every writer the signed-in reader's account currently follows. */
+export async function getFollowing() {
+  const data = await api.get('/api/accounts/following')
+  return data.accounts
+}
+
 export async function updateProfile({ displayName, email }) {
   const data = await api.post('/api/accounts/update-profile', { displayName, email })
   return data.account

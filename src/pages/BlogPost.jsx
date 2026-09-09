@@ -10,6 +10,10 @@ import { useMetaDescription } from '../hooks/useMetaDescription'
 import { useCanonicalUrl } from '../hooks/useCanonicalUrl'
 import { useMetaRobots } from '../hooks/useMetaRobots'
 import { useAdmin } from '../context/AdminContext'
+import { useAccount } from '../context/AccountContext'
+import { useToast } from '../context/ToastContext'
+import { toggleFollow } from '../data/accountStore'
+import { initials } from '../lib/initials'
 import { PostCover } from '../components/PostCover'
 import { PostEngagement } from '../components/PostEngagement'
 import { CommentSection } from '../components/CommentSection'
@@ -31,11 +35,15 @@ function BlogPostView({ slug }) {
   const [searchParams] = useSearchParams()
   const token = searchParams.get('token') || undefined
   const { effectiveIsAdmin } = useAdmin()
+  const { account } = useAccount()
+  const showToast = useToast()
 
   const [post, setPost] = useState(null)
   const [notFound, setNotFound] = useState(false)
   const [related, setRelated] = useState([])
   const [activeHeadingId, setActiveHeadingId] = useState(null)
+  const [followState, setFollowState] = useState(null)
+  const [followBusy, setFollowBusy] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -43,10 +51,15 @@ function BlogPostView({ slug }) {
     setPost(null)
     setNotFound(false)
 
+    setFollowState(null)
+
     getPostBySlug(slug, { token })
       .then((fetched) => {
         if (cancelled) return
         setPost(fetched)
+        if (fetched.author) {
+          setFollowState({ following: fetched.author.isFollowing, followerCount: fetched.author.followerCount })
+        }
       })
       .catch(() => {
         if (!cancelled) setNotFound(true)
@@ -107,6 +120,20 @@ function BlogPostView({ slug }) {
   const headings = getHeadings(post.content)
   const canEditAsOwner = Boolean(token && post.status === 'pending')
   const extras = getPostExtras(post.slug)
+  const handleToggleFollow = async () => {
+    if (!post.author || followBusy) return
+    setFollowBusy(true)
+    try {
+      const result = await toggleFollow(post.author.id)
+      setFollowState({ following: result.following, followerCount: result.followerCount })
+      showToast(result.following ? `Following ${post.author.displayName}` : `Unfollowed ${post.author.displayName}`)
+    } catch (err) {
+      showToast(err.message || 'Could not update that right now.', { type: 'error' })
+    } finally {
+      setFollowBusy(false)
+    }
+  }
+
   const seriesPosts = post.seriesName
     ? publishedOrder
         .filter((candidate) => candidate.seriesName === post.seriesName)
@@ -241,17 +268,56 @@ function BlogPostView({ slug }) {
         </>
       )}
 
-      <div className="author-card">
-        <div className="author-avatar" aria-hidden="true">
-          IT
+      {post.author ? (
+        <div className="author-card">
+          <div className="author-avatar" aria-hidden="true">
+            {initials(post.author.displayName)}
+          </div>
+          <div className="author-card-info">
+            <p className="author-name">Written by {post.author.displayName}</p>
+            <p className="author-followers">
+              {followState?.followerCount ?? post.author.followerCount}{' '}
+              {(followState?.followerCount ?? post.author.followerCount) === 1 ? 'follower' : 'followers'}
+            </p>
+          </div>
+          {account && account.id !== post.author.id && (
+            <button
+              type="button"
+              className={`btn ${followState?.following ? 'btn-ghost' : 'btn-primary'} follow-btn`}
+              onClick={handleToggleFollow}
+              disabled={followBusy}
+            >
+              {followState?.following ? 'Following' : 'Follow'}
+            </button>
+          )}
+          {!account && (
+            <Link to="/account/login" className="btn btn-ghost follow-btn">
+              Log in to follow
+            </Link>
+          )}
         </div>
-        <div>
-          <p className="author-name">Written by Ian Tirop</p>
-          <Link to="/about" className="author-link">
-            More about me
-          </Link>
+      ) : post.submittedByName ? (
+        <div className="author-card">
+          <div className="author-avatar" aria-hidden="true">
+            {initials(post.submittedByName)}
+          </div>
+          <div>
+            <p className="author-name">Written by {post.submittedByName}</p>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="author-card">
+          <div className="author-avatar" aria-hidden="true">
+            IT
+          </div>
+          <div>
+            <p className="author-name">Written by Ian Tirop</p>
+            <Link to="/about" className="author-link">
+              More about me
+            </Link>
+          </div>
+        </div>
+      )}
 
       {post.status === 'published' && relatedPosts.length > 0 && (
         <section className="related-posts">

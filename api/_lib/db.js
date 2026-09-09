@@ -522,6 +522,66 @@ export async function getAccountByResetToken(email, token) {
   return rows[0] || null
 }
 
+// Follow/unfollow a writer, toggling on whichever state is currently
+// stored — same convention as toggleCommentReaction/toggleCommentReport.
+// Self-follows are rejected by the caller (api/accounts/[action].js),
+// before this ever runs.
+export async function toggleFollow(followerId, writerId) {
+  const deleted = await sql`
+    DELETE FROM follows WHERE follower_id = ${followerId} AND writer_id = ${writerId}
+    RETURNING writer_id
+  `
+  if (deleted.length === 0) {
+    await sql`
+      INSERT INTO follows (follower_id, writer_id) VALUES (${followerId}, ${writerId})
+      ON CONFLICT DO NOTHING
+    `
+  }
+  const [{ count }] = await sql`SELECT COUNT(*)::int AS count FROM follows WHERE writer_id = ${writerId}`
+  return { following: deleted.length === 0, followerCount: count }
+}
+
+// Public-safe author details for a post's byline — just enough to render
+// "Written by X, N followers" and a Follow button, never the account's
+// email. `viewerAccountId` is null for a logged-out visitor, in which case
+// isFollowing is always false rather than hitting the follows table.
+export async function getAuthorInfo(accountId, viewerAccountId) {
+  const rows = await sql`SELECT id, display_name, created_at FROM accounts WHERE id = ${accountId} LIMIT 1`
+  const account = rows[0]
+  if (!account) return null
+
+  const [{ count }] = await sql`SELECT COUNT(*)::int AS count FROM follows WHERE writer_id = ${accountId}`
+  let isFollowing = false
+  if (viewerAccountId) {
+    const followRows = await sql`
+      SELECT 1 FROM follows WHERE follower_id = ${viewerAccountId} AND writer_id = ${accountId} LIMIT 1
+    `
+    isFollowing = followRows.length > 0
+  }
+
+  return { id: account.id, displayName: account.display_name, followerCount: count, isFollowing }
+}
+
+// Every writer this account follows, for the profile's Following tab —
+// with how many published posts each currently has, so a reader can see
+// at a glance whether there's anything new to catch up on.
+export async function getFollowedAccounts(followerId) {
+  const rows = await sql`
+    SELECT a.id, a.display_name, a.created_at,
+      (SELECT COUNT(*)::int FROM posts WHERE author_account_id = a.id AND status = 'published') AS post_count
+    FROM follows f
+    JOIN accounts a ON a.id = f.writer_id
+    WHERE f.follower_id = ${followerId}
+    ORDER BY f.created_at DESC
+  `
+  return rows.map((row) => ({
+    id: row.id,
+    displayName: row.display_name,
+    createdAt: row.created_at,
+    postCount: row.post_count,
+  }))
+}
+
 // Real numbers from what the site actually tracks (engagement + review
 // queue + accounts) — there's no page-view/traffic pipeline here, so this
 // never reports visits or unique-visitor counts, only what's genuinely in

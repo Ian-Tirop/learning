@@ -4,6 +4,7 @@ import {
   deletePostRow,
   getAllSubscriberEmails,
   markNewsletterSent,
+  getAuthorInfo,
 } from '../_lib/db.js'
 import { isAdminRequest, requireAdmin, safeEqual, getReaderAccountId } from '../_lib/auth.js'
 import { sendPublishNotification, sendSubmissionStatusEmail } from '../_lib/email.js'
@@ -25,6 +26,16 @@ async function handler(req, res) {
       return
     }
 
+    const readerAccountId = getReaderAccountId(req)
+
+    // Public-safe author byline (name, follower count, whether this viewer
+    // already follows them) — attached before the authorAccountId strip
+    // below so every branch that returns `post` carries it, reader-authored
+    // or not. `getAuthorInfo` never includes the account's email.
+    if (post.authorAccountId) {
+      post.author = await getAuthorInfo(post.authorAccountId, readerAccountId)
+    }
+
     if (post.status === 'published' || admin) {
       // submittedByEmail, authorAccountId, and newsletterSent are only
       // ever meant for Ian's eyes — strip them from anything a public/
@@ -41,7 +52,6 @@ async function handler(req, res) {
     // Not published, not admin — only visible to the person who submitted
     // it: either a signed-in reader account that owns it, or (for
     // anonymous submissions) the private edit token they were given.
-    const readerAccountId = getReaderAccountId(req)
     if (readerAccountId && post.authorAccountId && readerAccountId === post.authorAccountId) {
       res.status(200).json({ post })
       return

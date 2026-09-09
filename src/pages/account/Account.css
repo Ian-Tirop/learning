@@ -45,6 +45,13 @@
   box-shadow: var(--glow-shadow);
 }
 
+.profile-avatar-sm {
+  width: 40px;
+  height: 40px;
+  font-size: 14px;
+  box-shadow: none;
+}
+
 .profile-section-title {
   font-size: 20px;
   margin-bottom: 4px;

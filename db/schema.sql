@@ -163,3 +163,17 @@ CREATE TABLE IF NOT EXISTS feedback (
 -- and admin view rather than needing its own.
 ALTER TABLE feedback ADD COLUMN IF NOT EXISTS post_slug text;
 ALTER TABLE feedback ADD COLUMN IF NOT EXISTS post_title text;
+
+-- A reader account following a "writer" — any account with at least one
+-- published post. Direction matters: follower_id follows writer_id, never
+-- the reverse. Self-follows are rejected at the app layer (a CHECK here
+-- would need a name to be droppable/idempotent like the posts one above,
+-- and the app-layer check is simpler for a relationship this small).
+CREATE TABLE IF NOT EXISTS follows (
+  follower_id text NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+  writer_id text NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (follower_id, writer_id)
+);
+
+CREATE INDEX IF NOT EXISTS follows_writer_id_idx ON follows(writer_id);
