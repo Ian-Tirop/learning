@@ -49,14 +49,14 @@ export function ListenButton({ post }) {
   return (
     <div className="listen-button-wrap">
       {state === 'playing' ? (
-        <button type="button" className="btn btn-ghost" onClick={handlePause}>
+        <button type="button" className="listen-btn" onClick={handlePause}>
           <svg className="icon" role="presentation" aria-hidden="true">
             <use href="/icons.svg#pause-icon"></use>
           </svg>
           Pause
         </button>
       ) : (
-        <button type="button" className="btn btn-ghost" onClick={handlePlay}>
+        <button type="button" className="listen-btn" onClick={handlePlay}>
           <svg className="icon" role="presentation" aria-hidden="true">
             <use href="/icons.svg#speaker-icon"></use>
           </svg>
