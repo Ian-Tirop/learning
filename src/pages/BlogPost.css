@@ -228,7 +228,7 @@
   font-size: 14px;
 }
 
-.post-link-cta {
+.btn.post-link-cta {
   display: flex;
   width: fit-content;
   margin: 28px 0 4px;
