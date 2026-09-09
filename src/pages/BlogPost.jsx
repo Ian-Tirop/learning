@@ -217,8 +217,6 @@ function BlogPostView({ slug }) {
         <ContentBlocks content={post.content} />
       </div>
 
-      {post.status === 'published' && <SuggestEdit postSlug={post.slug} postTitle={post.title} />}
-
       {post.link && (
         <a
           href={post.link.href}
@@ -232,6 +230,8 @@ function BlogPostView({ slug }) {
           </svg>
         </a>
       )}
+
+      {post.status === 'published' && <SuggestEdit postSlug={post.slug} postTitle={post.title} />}
 
       {post.status === 'published' && (
         <>

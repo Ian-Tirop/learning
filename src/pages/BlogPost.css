@@ -229,7 +229,9 @@
 }
 
 .post-link-cta {
-  margin-top: 8px;
+  display: flex;
+  width: fit-content;
+  margin: 28px 0 4px;
 
   .icon {
     width: 15px;

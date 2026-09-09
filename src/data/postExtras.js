@@ -144,6 +144,37 @@ export const postExtras = {
         "Comments should explain the why that isn't visible in the code — if you're explaining what it does, that's a sign to rename something instead.",
     },
   },
+  'everything-i-learned-rebuilding-this-blogs-backend': {
+    poll: {
+      question: "Have you ever hit a hosting platform's hidden limit (a function cap, a cron frequency, a build-time ceiling) while building something?",
+      options: ['Yes, more than once', 'Once, and it taught me something', 'Not yet'],
+    },
+    quiz: {
+      question: "What did Vercel's Hobby plan cap that forced consolidating separate endpoints into single dispatch files?",
+      options: ['Database rows', 'Serverless functions', 'Environment variables', 'Deploy minutes'],
+      correctIndex: 1,
+      explanation:
+        'The Hobby plan caps a project at twelve serverless functions — hitting that twice is what pushed related actions (login, follow-toggle, following, and more) into one dynamic [action].js dispatch file per resource instead of one file each.',
+    },
+  },
+  'designing-the-boring-states-loading-empty-and-error': {
+    poll: {
+      question: 'Which of these three states do you think gets the least design attention on most teams?',
+      options: ['Loading states', 'Empty states', 'Error states'],
+    },
+    quiz: {
+      question: 'According to the post, why do skeleton screens tend to feel faster than spinners at the same load time?',
+      options: [
+        'They use less CPU to render',
+        'They imply a shape the brain can anchor an expectation to',
+        "They're animated at a higher frame rate",
+        'They hide the network request entirely',
+      ],
+      correctIndex: 1,
+      explanation:
+        'A spinner only communicates duration. A skeleton communicates shape — roughly where the title and image will land — giving the brain something to anchor to instead of just watching a shape spin in a void.',
+    },
+  },
 }
 
 export function getPostExtras(slug) {
