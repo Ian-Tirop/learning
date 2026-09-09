@@ -227,6 +227,26 @@
   background: var(--accent-bg);
 }
 
+.profile-link {
+  position: relative;
+}
+
+.profile-link.signed-in {
+  border-color: var(--accent-border);
+  color: var(--accent);
+}
+
+.profile-signed-in-dot {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--bg);
+}
+
 .nav-toggle {
   display: none;
   flex-direction: column;
