@@ -115,7 +115,14 @@ export function Submit() {
           submittedByName: name.trim(),
           submittedByEmail: email.trim(),
         })
-        addMySubmission(data.post.slug, data.editToken, payload.title)
+        // Only anonymous submissions need this browser-local fallback —
+        // an account-linked one is already tracked server-side and shows
+        // up in /profile, so storing it here too would leak "your
+        // submission from this browser" to whoever uses this browser next,
+        // even after the account that actually made it has logged out.
+        if (!account) {
+          addMySubmission(data.post.slug, data.editToken, payload.title)
+        }
         setResult({ slug: data.post.slug, token: data.editToken })
       }
     } catch (err) {
