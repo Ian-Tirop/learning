@@ -4,6 +4,7 @@ import { getAllPosts, getPostBySlug } from '../data/postStore'
 import { getPostExtras } from '../data/postExtras'
 import { getRelatedPosts } from '../lib/postRanking'
 import { getHeadings } from '../lib/headings'
+import { countWords } from '../lib/estimateReadingTime'
 import { usePostEngagement } from '../hooks/usePostEngagement'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { useMetaDescription } from '../hooks/useMetaDescription'
@@ -16,6 +17,7 @@ import { toggleFollow } from '../data/accountStore'
 import { initials } from '../lib/initials'
 import { PostCover } from '../components/PostCover'
 import { Reveal } from '../components/Reveal'
+import { TableOfContents } from '../components/TableOfContents'
 import { PostEngagement } from '../components/PostEngagement'
 import { CommentSection } from '../components/CommentSection'
 import { ContentBlocks } from '../components/ContentBlocks'
@@ -119,6 +121,7 @@ function BlogPostView({ slug }) {
   const next = currentIndex > 0 ? publishedOrder[currentIndex - 1] : undefined
   const relatedPosts = getRelatedPosts(related, post, 3)
   const headings = getHeadings(post.content)
+  const isLongPost = countWords(post.content) >= 1500
   const canEditAsOwner = Boolean(token && post.status === 'pending')
   const extras = getPostExtras(post.slug)
   const handleToggleFollow = async () => {
@@ -206,22 +209,8 @@ function BlogPostView({ slug }) {
         </nav>
       )}
 
-      {headings.length > 1 && (
-        <nav className="toc" aria-label="Table of contents">
-          <p className="toc-label">In this post</p>
-          <ul>
-            {headings.map((heading) => (
-              <li key={heading.id}>
-                <a
-                  href={`#${heading.id}`}
-                  className={heading.id === activeHeadingId ? 'active' : undefined}
-                >
-                  {heading.text}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </nav>
+      {headings.length > 1 && isLongPost && (
+        <TableOfContents headings={headings} activeHeadingId={activeHeadingId} />
       )}
 
       <div className="prose">

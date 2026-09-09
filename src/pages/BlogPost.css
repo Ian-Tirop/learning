@@ -49,10 +49,41 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--accent);
-  margin: 0 0 10px;
+  margin: 0;
 }
 
-.toc ul {
+.toc-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+}
+
+.toc-chevron {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  color: var(--text);
+  transition: transform 0.25s var(--ease);
+}
+
+.toc.is-open .toc-chevron {
+  transform: rotate(180deg);
+}
+
+.toc-list {
   list-style: none;
   margin: 0;
   padding: 0;
@@ -61,7 +92,7 @@
   gap: 6px;
 }
 
-.toc a {
+.toc-list a {
   font-size: 14px;
   color: var(--text);
   text-decoration: none;
@@ -75,6 +106,55 @@
   &.active {
     color: var(--accent);
     font-weight: 600;
+  }
+}
+
+/* Below this, there's no room for a floating side sidebar (see the
+   min-width: 1400px rule) — the TOC stays an inline box above the
+   content, and on genuinely narrow/mobile screens it collapses into a
+   dropdown behind the toggle button. */
+@media (max-width: 899px) {
+  .toc-list {
+    display: none;
+    margin-top: 14px;
+  }
+
+  .toc.is-open .toc-list {
+    display: flex;
+  }
+}
+
+/* Wide enough that the toggle affordance would be pointless clutter —
+   the list is always expanded, so hide the chevron and drop the
+   pointer cursor (the button still technically toggles `open`, it just
+   has no visible effect once .toc-list's display is forced open below). */
+@media (min-width: 900px) {
+  .toc-chevron {
+    display: none;
+  }
+
+  .toc-toggle {
+    cursor: default;
+  }
+}
+
+/* Genuinely wide desktop only — .post-page.container tops out at 760px,
+   so anything narrower than this doesn't leave enough side margin for a
+   240px floating column without crowding or clipping past the viewport
+   edge (worked out from 50% + 380 + 40 + 240 + a small safety buffer). */
+@media (min-width: 1400px) {
+  .toc {
+    position: fixed;
+    top: 96px;
+    left: calc(50% + 420px);
+    width: 240px;
+    max-height: calc(100vh - 130px);
+    overflow-y: auto;
+    margin-bottom: 0;
+  }
+
+  .toc-list {
+    display: flex !important;
   }
 }
 
