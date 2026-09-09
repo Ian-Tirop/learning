@@ -8,6 +8,7 @@ import './Footer.css'
 const siteLinks = [
   { to: '/', label: 'Home' },
   { to: '/blog', label: 'Blog' },
+  { to: '/community', label: 'Community' },
   { to: '/topics', label: 'Topics' },
   { to: '/about', label: 'About' },
   { to: '/contact', label: 'Contact' },

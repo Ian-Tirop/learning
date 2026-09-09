@@ -58,7 +58,7 @@ function escapeXml(value) {
 }
 
 function buildSitemap(published) {
-  const staticRoutes = ['/', '/blog', '/about', '/contact']
+  const staticRoutes = ['/', '/blog', '/community', '/about', '/contact']
   const postRoutes = published.map((post) => `/blog/${post.slug}`)
   const urls = [...staticRoutes, ...postRoutes]
     .map((route) => `  <url><loc>${escapeXml(siteUrl + route)}</loc></url>`)

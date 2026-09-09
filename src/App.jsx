@@ -3,6 +3,7 @@ import { Nav } from './components/Nav'
 import { Footer } from './components/Footer'
 import { Home } from './pages/Home'
 import { Blog } from './pages/Blog'
+import { Community } from './pages/Community'
 import { BlogPost } from './pages/BlogPost'
 import { Topics } from './pages/Topics'
 import { About } from './pages/About'
@@ -49,6 +50,7 @@ function App() {
               <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/blog" element={<Blog />} />
+                <Route path="/community" element={<Community />} />
                 <Route path="/blog/:slug" element={<BlogPost />} />
                 <Route path="/topics" element={<Topics />} />
                 <Route path="/about" element={<About />} />

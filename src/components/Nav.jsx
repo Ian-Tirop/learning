@@ -9,6 +9,7 @@ import './Nav.css'
 const links = [
   { to: '/', label: 'Home', end: true },
   { to: '/blog', label: 'Blog' },
+  { to: '/community', label: 'Community' },
   { to: '/about', label: 'About' },
   { to: '/contact', label: 'Contact' },
 ]
