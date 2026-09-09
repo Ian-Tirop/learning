@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getAllPosts } from '../data/postStore'
 import { getTagCounts } from '../lib/tagCounts'
+import { Reveal } from '../components/Reveal'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { useMetaDescription } from '../hooks/useMetaDescription'
 import { useCanonicalUrl } from '../hooks/useCanonicalUrl'
@@ -38,18 +39,19 @@ export function Topics() {
       {!loading && tags.length === 0 && <p className="loading-note">No published posts yet.</p>}
 
       <div className="topics-cloud">
-        {tags.map(({ tag, count }) => {
+        {tags.map(({ tag, count }, index) => {
           const scale = 0.85 + (count / maxCount) * 0.65
           return (
-            <Link
-              key={tag}
-              to={`/blog?tag=${encodeURIComponent(tag)}`}
-              className="topic-chip"
-              style={{ fontSize: `${scale * 15}px` }}
-            >
-              {tag}
-              <span className="topic-chip-count">{count}</span>
-            </Link>
+            <Reveal as="span" key={tag} delay={Math.min(index, 12) * 30}>
+              <Link
+                to={`/blog?tag=${encodeURIComponent(tag)}`}
+                className="topic-chip"
+                style={{ fontSize: `${scale * 15}px` }}
+              >
+                {tag}
+                <span className="topic-chip-count">{count}</span>
+              </Link>
+            </Reveal>
           )
         })}
       </div>

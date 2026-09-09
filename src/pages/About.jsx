@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { Reveal } from '../components/Reveal'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { useMetaDescription } from '../hooks/useMetaDescription'
 import { useCanonicalUrl } from '../hooks/useCanonicalUrl'
@@ -36,7 +37,7 @@ export function About() {
   useCanonicalUrl()
   return (
     <section className="container about-page">
-      <div className="about-header">
+      <div className="about-header fade-in-up">
         <div className="avatar" aria-hidden="true">
           IT
         </div>
@@ -51,7 +52,7 @@ export function About() {
       </div>
 
       <div className="about-grid">
-        <div className="about-block">
+        <Reveal as="div" className="about-block">
           <h2>What I care about</h2>
           <p>
             Software that feels considered rather than assembled — where the
@@ -67,9 +68,9 @@ export function About() {
               </span>
             ))}
           </div>
-        </div>
+        </Reveal>
 
-        <div className="about-block">
+        <Reveal as="div" className="about-block" delay={100}>
           <h2>Right now</h2>
           <ul className="now-list">
             {now.map((item) => (
@@ -79,15 +80,15 @@ export function About() {
               </li>
             ))}
           </ul>
-        </div>
+        </Reveal>
       </div>
 
-      <div className="about-cta">
+      <Reveal as="div" className="about-cta">
         <p>Want to talk about any of this?</p>
         <Link to="/contact" className="btn btn-primary">
           Get in touch
         </Link>
-      </div>
+      </Reveal>
     </section>
   )
 }

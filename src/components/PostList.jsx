@@ -7,6 +7,7 @@ import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { PostCover } from './PostCover'
 import { SkeletonRow } from './Skeleton'
+import { Reveal } from './Reveal'
 import { formatDate } from '../lib/formatDate'
 import { searchPosts } from '../lib/searchPosts'
 import { isRecent } from '../lib/isRecent'
@@ -82,12 +83,8 @@ export function PostList({ posts, loading, emptyMessage }) {
           ))}
         {!loading &&
           visiblePosts.map((post, index) => (
-            <li key={post.slug}>
-              <Link
-                to={`/blog/${post.slug}`}
-                className="post-row fade-in-up"
-                style={{ animationDelay: `${Math.min(index, 8) * 50}ms` }}
-              >
+            <Reveal as="li" key={post.slug} delay={Math.min(index, 8) * 60}>
+              <Link to={`/blog/${post.slug}`} className="post-row">
                 <PostCover cover={post.cover} size="thumb" />
                 <div className="post-row-main">
                   <h2>
@@ -111,7 +108,7 @@ export function PostList({ posts, loading, emptyMessage }) {
                   {post.submittedByName && <span>by {post.submittedByName}</span>}
                 </div>
               </Link>
-            </li>
+            </Reveal>
           ))}
       </ul>
 

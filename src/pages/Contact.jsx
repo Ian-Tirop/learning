@@ -3,6 +3,7 @@ import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { useMetaDescription } from '../hooks/useMetaDescription'
 import { useCanonicalUrl } from '../hooks/useCanonicalUrl'
 import { ReaderFeedback } from '../components/ReaderFeedback'
+import { Reveal } from '../components/Reveal'
 import { social } from '../data/social'
 import './Contact.css'
 
@@ -66,8 +67,8 @@ export function Contact() {
       </div>
 
       <div className="contact-methods">
-        {contactMethods.map((method) => (
-          <div className="contact-card" key={method.id}>
+        {contactMethods.map((method, index) => (
+          <Reveal as="div" className="contact-card" key={method.id} delay={index * 90}>
             <svg className="icon" role="presentation" aria-hidden="true">
               <use href={`/icons.svg#${method.icon}`}></use>
             </svg>
@@ -86,11 +87,11 @@ export function Contact() {
                 {copiedId === method.id ? 'Copied!' : 'Copy'}
               </button>
             </div>
-          </div>
+          </Reveal>
         ))}
       </div>
 
-      <div className="contact-social">
+      <Reveal as="div" className="contact-social">
         <p>Or find me elsewhere</p>
         <ul>
           {social.map((item) => (
@@ -104,9 +105,11 @@ export function Contact() {
             </li>
           ))}
         </ul>
-      </div>
+      </Reveal>
 
-      <ReaderFeedback />
+      <Reveal>
+        <ReaderFeedback />
+      </Reveal>
     </section>
   )
 }

@@ -5,6 +5,7 @@ import { api } from '../lib/apiClient'
 import { PostCover } from '../components/PostCover'
 import { SkeletonPostCard } from '../components/Skeleton'
 import { Newsletter } from '../components/Newsletter'
+import { Reveal } from '../components/Reveal'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { useMetaDescription } from '../hooks/useMetaDescription'
 import { useCanonicalUrl } from '../hooks/useCanonicalUrl'
@@ -48,7 +49,7 @@ export function Home() {
 
   return (
     <>
-      <section className="hero container fade-in-up">
+      <section className="hero container">
         <div className="hero-bg" aria-hidden="true">
           <span className="hero-blob hero-blob-1" />
           <span className="hero-blob hero-blob-2" />
@@ -58,19 +59,19 @@ export function Home() {
 
         <div className="hero-grid">
           <div className="hero-content">
-            <p className="tagline">
+            <p className="tagline fade-in-up">
               <span className="wave">👋</span> Hi, I&apos;m Ian Tirop
             </p>
-            <h1 className="gradient-text">
+            <h1 className="gradient-text fade-in-up" style={{ animationDelay: '90ms' }}>
               Notes on code, design, and things I learn by building.
             </h1>
-            <p className="hero-sub">
+            <p className="hero-sub fade-in-up" style={{ animationDelay: '180ms' }}>
               I&apos;m a developer and UI/UX designer, and I write about the small,
               specific problems that show up on both sides of that line — the
               CSS bug that ate an afternoon, the interaction that felt wrong
               until the easing curve changed.
             </p>
-            <div className="hero-actions">
+            <div className="hero-actions fade-in-up" style={{ animationDelay: '270ms' }}>
               <Link to="/blog" className="btn btn-primary">
                 Read the blog
               </Link>
@@ -80,7 +81,7 @@ export function Home() {
             </div>
           </div>
 
-          <div className="hero-visual" aria-hidden="true">
+          <div className="hero-visual fade-in-up" style={{ animationDelay: '220ms' }} aria-hidden="true">
             <div className="code-window">
               <span className="tag hero-chip hero-chip-1">CSS &amp; layout</span>
               <span className="tag hero-chip hero-chip-2">React</span>
@@ -107,7 +108,7 @@ export default function IanTirop() {
           </div>
         </div>
 
-        <a href="#topics" className="hero-scroll">
+        <a href="#topics" className="hero-scroll fade-in-up" style={{ animationDelay: '380ms' }}>
           Scroll
           <span className="hero-scroll-icon">
             <svg className="icon" role="presentation" aria-hidden="true">
@@ -117,7 +118,7 @@ export default function IanTirop() {
         </a>
       </section>
 
-      <section id="topics" className="container topics-row" aria-label="Topics I write about">
+      <Reveal as="section" id="topics" className="container topics-row" aria-label="Topics I write about">
         {topTags.map(({ tag, count }) => (
           <Link key={tag} to={`/blog?tag=${encodeURIComponent(tag)}`} className="tag">
             {tag} <span className="tag-count">{count}</span>
@@ -126,9 +127,9 @@ export default function IanTirop() {
         <Link to="/topics" className="tag topics-see-all">
           All topics →
         </Link>
-      </section>
+      </Reveal>
 
-      <section className="container latest-section">
+      <Reveal as="section" className="container latest-section">
         <div className="section-heading">
           <p className="eyebrow">Latest</p>
           <h2>Recent posts</h2>
@@ -138,30 +139,27 @@ export default function IanTirop() {
           {loading &&
             [0, 1, 2].map((i) => <SkeletonPostCard key={i} />)}
           {!loading && latest.map((post, index) => (
-            <Link
-              key={post.slug}
-              to={`/blog/${post.slug}`}
-              className="card post-card fade-in-up"
-              style={{ animationDelay: `${index * 90}ms` }}
-            >
-              <PostCover cover={post.cover} size="card" />
-              <div className="post-card-body">
-                <p className="post-date">
-                  {index === 0 && isRecent(post.date) && <span className="new-badge">New</span>}
-                  {formatDate(post.date)}
-                  {' · '}
-                  {post.readingTime} min read
-                </p>
-                <h3>{post.title}</h3>
-                <p className="post-excerpt">{post.excerpt}</p>
-                <span className="read-more">
-                  Read post
-                  <svg className="icon" role="presentation" aria-hidden="true">
-                    <use href="/icons.svg#arrow-icon"></use>
-                  </svg>
-                </span>
-              </div>
-            </Link>
+            <Reveal as="div" key={post.slug} delay={index * 90}>
+              <Link to={`/blog/${post.slug}`} className="card post-card">
+                <PostCover cover={post.cover} size="card" />
+                <div className="post-card-body">
+                  <p className="post-date">
+                    {index === 0 && isRecent(post.date) && <span className="new-badge">New</span>}
+                    {formatDate(post.date)}
+                    {' · '}
+                    {post.readingTime} min read
+                  </p>
+                  <h3>{post.title}</h3>
+                  <p className="post-excerpt">{post.excerpt}</p>
+                  <span className="read-more">
+                    Read post
+                    <svg className="icon" role="presentation" aria-hidden="true">
+                      <use href="/icons.svg#arrow-icon"></use>
+                    </svg>
+                  </span>
+                </div>
+              </Link>
+            </Reveal>
           ))}
         </div>
 
@@ -171,10 +169,10 @@ export default function IanTirop() {
             <use href="/icons.svg#arrow-icon"></use>
           </svg>
         </Link>
-      </section>
+      </Reveal>
 
       {favorites.length > 0 && (
-        <section className="container favorites-section">
+        <Reveal as="section" className="container favorites-section">
           <div className="section-heading">
             <p className="eyebrow">Reader favorites</p>
             <h2>Most liked posts</h2>
@@ -182,7 +180,7 @@ export default function IanTirop() {
 
           <ul className="favorite-list">
             {favorites.map((post, index) => (
-              <li key={post.slug}>
+              <Reveal as="li" key={post.slug} delay={index * 80}>
                 <Link to={`/blog/${post.slug}`} className="favorite-row">
                   <span className="favorite-rank">{index + 1}</span>
                   <PostCover cover={post.cover} size="thumb" />
@@ -197,38 +195,40 @@ export default function IanTirop() {
                     {post.seed.likes}
                   </span>
                 </Link>
-              </li>
+              </Reveal>
             ))}
           </ul>
-        </section>
+        </Reveal>
       )}
 
       {testimonials.length > 0 && (
-        <section className="container testimonials-section">
+        <Reveal as="section" className="container testimonials-section">
           <div className="section-heading">
             <p className="eyebrow">What readers say</p>
             <h2>From the comments</h2>
           </div>
 
           <div className="testimonial-grid">
-            {testimonials.map((comment) => (
-              <Link
+            {testimonials.map((comment, index) => (
+              <Reveal
+                as="div"
                 key={`${comment.postSlug}-${comment.id}`}
-                to={`/blog/${comment.postSlug}`}
-                className="card testimonial-card"
+                delay={index * 90}
               >
-                <p className="testimonial-text">&ldquo;{comment.text}&rdquo;</p>
-                <p className="testimonial-attribution">
-                  <span className="testimonial-name">{comment.name}</span>
-                  <span className="testimonial-source">on {comment.postTitle}</span>
-                </p>
-              </Link>
+                <Link to={`/blog/${comment.postSlug}`} className="card testimonial-card">
+                  <p className="testimonial-text">&ldquo;{comment.text}&rdquo;</p>
+                  <p className="testimonial-attribution">
+                    <span className="testimonial-name">{comment.name}</span>
+                    <span className="testimonial-source">on {comment.postTitle}</span>
+                  </p>
+                </Link>
+              </Reveal>
             ))}
           </div>
-        </section>
+        </Reveal>
       )}
 
-      <section className="container author-section">
+      <Reveal as="section" className="container author-section">
         <div className="author-spotlight">
           <div className="author-spotlight-avatar" aria-hidden="true">
             IT
@@ -246,9 +246,11 @@ export default function IanTirop() {
             </Link>
           </div>
         </div>
-      </section>
+      </Reveal>
 
-      <Newsletter />
+      <Reveal>
+        <Newsletter />
+      </Reveal>
     </>
   )
 }

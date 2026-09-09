@@ -15,6 +15,7 @@ import { useToast } from '../context/ToastContext'
 import { toggleFollow } from '../data/accountStore'
 import { initials } from '../lib/initials'
 import { PostCover } from '../components/PostCover'
+import { Reveal } from '../components/Reveal'
 import { PostEngagement } from '../components/PostEngagement'
 import { CommentSection } from '../components/CommentSection'
 import { ContentBlocks } from '../components/ContentBlocks'
@@ -268,80 +269,80 @@ function BlogPostView({ slug }) {
         </>
       )}
 
-      {post.author ? (
-        <div className="author-card">
-          <div className="author-avatar" aria-hidden="true">
-            {initials(post.author.displayName)}
+      <Reveal>
+        {post.author ? (
+          <div className="author-card">
+            <div className="author-avatar" aria-hidden="true">
+              {initials(post.author.displayName)}
+            </div>
+            <div className="author-card-info">
+              <p className="author-name">Written by {post.author.displayName}</p>
+              <p className="author-followers">
+                {followState?.followerCount ?? post.author.followerCount}{' '}
+                {(followState?.followerCount ?? post.author.followerCount) === 1 ? 'follower' : 'followers'}
+              </p>
+            </div>
+            {account && account.id !== post.author.id && (
+              <button
+                type="button"
+                className={`btn ${followState?.following ? 'btn-ghost' : 'btn-primary'} follow-btn`}
+                onClick={handleToggleFollow}
+                disabled={followBusy}
+              >
+                {followState?.following ? 'Following' : 'Follow'}
+              </button>
+            )}
+            {!account && (
+              <Link to="/account/login" className="btn btn-ghost follow-btn">
+                Log in to follow
+              </Link>
+            )}
           </div>
-          <div className="author-card-info">
-            <p className="author-name">Written by {post.author.displayName}</p>
-            <p className="author-followers">
-              {followState?.followerCount ?? post.author.followerCount}{' '}
-              {(followState?.followerCount ?? post.author.followerCount) === 1 ? 'follower' : 'followers'}
-            </p>
+        ) : post.submittedByName ? (
+          <div className="author-card">
+            <div className="author-avatar" aria-hidden="true">
+              {initials(post.submittedByName)}
+            </div>
+            <div>
+              <p className="author-name">Written by {post.submittedByName}</p>
+            </div>
           </div>
-          {account && account.id !== post.author.id && (
-            <button
-              type="button"
-              className={`btn ${followState?.following ? 'btn-ghost' : 'btn-primary'} follow-btn`}
-              onClick={handleToggleFollow}
-              disabled={followBusy}
-            >
-              {followState?.following ? 'Following' : 'Follow'}
-            </button>
-          )}
-          {!account && (
-            <Link to="/account/login" className="btn btn-ghost follow-btn">
-              Log in to follow
-            </Link>
-          )}
-        </div>
-      ) : post.submittedByName ? (
-        <div className="author-card">
-          <div className="author-avatar" aria-hidden="true">
-            {initials(post.submittedByName)}
+        ) : (
+          <div className="author-card">
+            <div className="author-avatar" aria-hidden="true">
+              IT
+            </div>
+            <div>
+              <p className="author-name">Written by Ian Tirop</p>
+              <Link to="/about" className="author-link">
+                More about me
+              </Link>
+            </div>
           </div>
-          <div>
-            <p className="author-name">Written by {post.submittedByName}</p>
-          </div>
-        </div>
-      ) : (
-        <div className="author-card">
-          <div className="author-avatar" aria-hidden="true">
-            IT
-          </div>
-          <div>
-            <p className="author-name">Written by Ian Tirop</p>
-            <Link to="/about" className="author-link">
-              More about me
-            </Link>
-          </div>
-        </div>
-      )}
+        )}
+      </Reveal>
 
       {post.status === 'published' && relatedPosts.length > 0 && (
-        <section className="related-posts">
+        <Reveal as="section" className="related-posts">
           <h2>Related posts</h2>
           <div className="related-grid">
-            {relatedPosts.map((relatedPost) => (
-              <Link
-                key={relatedPost.slug}
-                to={`/blog/${relatedPost.slug}`}
-                className="card related-card"
-              >
-                <PostCover cover={relatedPost.cover} size="card" />
-                <div className="related-card-body">
-                  <h3>{relatedPost.title}</h3>
-                  <p>{relatedPost.excerpt}</p>
-                </div>
-              </Link>
+            {relatedPosts.map((relatedPost, index) => (
+              <Reveal as="div" key={relatedPost.slug} delay={index * 90}>
+                <Link to={`/blog/${relatedPost.slug}`} className="card related-card">
+                  <PostCover cover={relatedPost.cover} size="card" />
+                  <div className="related-card-body">
+                    <h3>{relatedPost.title}</h3>
+                    <p>{relatedPost.excerpt}</p>
+                  </div>
+                </Link>
+              </Reveal>
             ))}
           </div>
-        </section>
+        </Reveal>
       )}
 
       {post.status === 'published' && (prev || next) && (
-        <nav className="post-nav">
+        <Reveal as="nav" className="post-nav">
           {prev ? (
             <Link to={`/blog/${prev.slug}`} className="card post-nav-link">
               <span className="post-nav-label">← Older</span>
@@ -356,7 +357,7 @@ function BlogPostView({ slug }) {
               <span className="post-nav-title">{next.title}</span>
             </Link>
           )}
-        </nav>
+        </Reveal>
       )}
     </article>
   )
