@@ -39,7 +39,7 @@ export function Community() {
         <h1>From our readers</h1>
         <p className="blog-intro">
           {posts.length} posts submitted by readers through{' '}
-          <Link to="/submit">Submit</Link> and approved for publishing —
+          <Link to="/submit">Write</Link> and approved for publishing —
           same blog, different voices.{' '}
           <Link to="/blog">Looking for my own posts? →</Link>
         </p>

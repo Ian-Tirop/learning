@@ -24,7 +24,7 @@ export function Submit() {
   const { account, loading: accountLoading } = useAccount()
   const { effectiveIsAdmin } = useAdmin()
 
-  useDocumentTitle(isEdit ? 'Edit your submission — Ian Tirop' : 'Submit a post — Ian Tirop')
+  useDocumentTitle(isEdit ? 'Edit your submission — Ian Tirop' : 'Write for the blog — Ian Tirop')
   useMetaRobots()
 
   const [existing, setExisting] = useState(null)
@@ -146,7 +146,7 @@ export function Submit() {
       <section className="container write-page">
         <p className="comment-error write-error">{loadError}</p>
         <Link to="/submit" className="btn btn-ghost">
-          Submit a new post instead
+          Write a new post instead
         </Link>
       </section>
     )
@@ -171,7 +171,7 @@ export function Submit() {
       <section className="container write-page submit-page">
         <div className="write-header">
           <div>
-            <p className="eyebrow">Submit a post</p>
+            <p className="eyebrow">Write</p>
             <h1>{isEdit ? 'Updated!' : 'Thanks — sent for review'}</h1>
           </div>
         </div>
@@ -208,7 +208,7 @@ export function Submit() {
     <section className="container write-page submit-page">
       <div className="write-header">
         <div>
-          <p className="eyebrow">Submit a post</p>
+          <p className="eyebrow">Write</p>
           <h1>{isEdit ? 'Edit your submission' : 'Write for the blog'}</h1>
           <p className="write-intro">
             {isEdit

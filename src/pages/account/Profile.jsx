@@ -292,7 +292,7 @@ export function Profile() {
         </div>
         <div className="write-header-actions">
           <Link to="/submit" className="btn btn-primary">
-            Submit a new post
+            Write a new post
           </Link>
           <button type="button" className="btn btn-ghost" onClick={logout}>
             Log out

@@ -65,7 +65,7 @@ export function Nav() {
               onClick={() => setOpen(false)}
               className={({ isActive }) => (isActive ? 'active' : undefined)}
             >
-              Submit
+              Write
             </NavLink>
           )}
           <div className="nav-icon-row">

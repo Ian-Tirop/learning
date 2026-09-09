@@ -10,6 +10,7 @@ const siteLinks = [
   { to: '/blog', label: 'Blog' },
   { to: '/community', label: 'Community' },
   { to: '/topics', label: 'Topics' },
+  { to: '/submit', label: 'Write' },
   { to: '/about', label: 'About' },
   { to: '/contact', label: 'Contact' },
 ]
