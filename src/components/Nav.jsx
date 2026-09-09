@@ -48,26 +48,28 @@ export function Nav() {
         </button>
 
         <nav className={`nav-links${open ? ' open' : ''}`}>
-          {links.map((link) => (
-            <NavLink
-              key={link.to}
-              to={link.to}
-              end={link.end}
-              onClick={() => setOpen(false)}
-              className={({ isActive }) => (isActive ? 'active' : undefined)}
-            >
-              {link.label}
-            </NavLink>
-          ))}
-          {!effectiveIsAdmin && (
-            <NavLink
-              to="/submit"
-              onClick={() => setOpen(false)}
-              className={({ isActive }) => (isActive ? 'active' : undefined)}
-            >
-              Write
-            </NavLink>
-          )}
+          <div className="nav-main-links">
+            {links.map((link) => (
+              <NavLink
+                key={link.to}
+                to={link.to}
+                end={link.end}
+                onClick={() => setOpen(false)}
+                className={({ isActive }) => (isActive ? 'active' : undefined)}
+              >
+                {link.label}
+              </NavLink>
+            ))}
+            {!effectiveIsAdmin && (
+              <NavLink
+                to="/submit"
+                onClick={() => setOpen(false)}
+                className={({ isActive }) => (isActive ? 'active' : undefined)}
+              >
+                Write
+              </NavLink>
+            )}
+          </div>
           <div className="nav-icon-row">
             <NavSearch />
 
