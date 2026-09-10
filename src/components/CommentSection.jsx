@@ -3,14 +3,14 @@ import { formatRelativeDate } from '../lib/formatRelativeDate'
 import { useToast } from '../context/ToastContext'
 import './CommentSection.css'
 
-function ReplyForm({ onSubmit, onCancel }) {
+function ReplyForm({ account, onSubmit, onCancel }) {
   const [name, setName] = useState('')
   const [text, setText] = useState('')
   const [error, setError] = useState('')
 
   const handleSubmit = (event) => {
     event.preventDefault()
-    const trimmedName = name.trim()
+    const trimmedName = account ? account.displayName : name.trim()
     const trimmedText = text.trim()
 
     if (!trimmedName || !trimmedText) {
@@ -26,13 +26,19 @@ function ReplyForm({ onSubmit, onCancel }) {
 
   return (
     <form className="reply-form" onSubmit={handleSubmit}>
-      <input
-        type="text"
-        placeholder="Your name"
-        value={name}
-        onChange={(event) => setName(event.target.value)}
-        aria-label="Your name"
-      />
+      {account ? (
+        <p className="commenting-as">
+          Replying as <strong>{account.displayName}</strong>
+        </p>
+      ) : (
+        <input
+          type="text"
+          placeholder="Your name"
+          value={name}
+          onChange={(event) => setName(event.target.value)}
+          aria-label="Your name"
+        />
+      )}
       <textarea
         placeholder="Write a reply..."
         value={text}
@@ -157,6 +163,7 @@ function CommentReactions({ entry, onToggle }) {
 }
 
 function CommentEntry({
+  account,
   entry,
   isReply,
   isEditing,
@@ -244,7 +251,7 @@ function CommentEntry({
           </>
         )}
 
-        {isReplyOpen && <ReplyForm onSubmit={onSubmitReply} onCancel={onCancelReply} />}
+        {isReplyOpen && <ReplyForm account={account} onSubmit={onSubmitReply} onCancel={onCancelReply} />}
       </div>
     </div>
   )
@@ -270,6 +277,7 @@ function sortComments(comments, sortKey) {
 }
 
 export function CommentSection({
+  account,
   comments,
   addComment,
   editComment,
@@ -294,7 +302,7 @@ export function CommentSection({
 
   const handleSubmit = (event) => {
     event.preventDefault()
-    const trimmedName = name.trim()
+    const trimmedName = account ? account.displayName : name.trim()
     const trimmedText = text.trim()
 
     if (!trimmedName || !trimmedText) {
@@ -337,13 +345,19 @@ export function CommentSection({
       </div>
 
       <form className="comment-form" onSubmit={handleSubmit}>
-        <input
-          type="text"
-          placeholder="Your name"
-          value={name}
-          onChange={(event) => setName(event.target.value)}
-          aria-label="Your name"
-        />
+        {account ? (
+          <p className="commenting-as">
+            Commenting as <strong>{account.displayName}</strong>
+          </p>
+        ) : (
+          <input
+            type="text"
+            placeholder="Your name"
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            aria-label="Your name"
+          />
+        )}
         <textarea
           placeholder="Add to the discussion..."
           value={text}
@@ -365,6 +379,7 @@ export function CommentSection({
         {sortedComments.map((comment) => (
           <li key={comment.id} className="comment-thread">
             <CommentEntry
+              account={account}
               entry={comment}
               isReply={false}
               isEditing={editingId === comment.id}
@@ -399,6 +414,7 @@ export function CommentSection({
                 {comment.replies.map((reply) => (
                   <li key={reply.id}>
                     <CommentEntry
+                      account={account}
                       entry={reply}
                       isReply
                       isEditing={editingId === reply.id}

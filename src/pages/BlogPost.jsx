@@ -245,6 +245,7 @@ function BlogPostView({ slug }) {
           <PostEngagement post={post} {...engagement} />
 
           <CommentSection
+            account={account}
             comments={engagement.comments}
             addComment={engagement.addComment}
             editComment={engagement.editComment}

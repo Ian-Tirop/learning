@@ -58,6 +58,16 @@
   }
 }
 
+.commenting-as {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text);
+
+  strong {
+    color: var(--text-h);
+  }
+}
+
 .comment-form {
   display: flex;
   flex-direction: column;

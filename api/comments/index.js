@@ -51,10 +51,9 @@ async function handler(req, res) {
       res.status(400).json({ error: 'A postSlug is required.' })
       return
     }
-    const trimmedName = typeof name === 'string' ? name.trim().slice(0, MAX_NAME_LENGTH) : ''
     const trimmedText = typeof text === 'string' ? text.trim().slice(0, MAX_COMMENT_LENGTH) : ''
-    if (!trimmedName || !trimmedText) {
-      res.status(400).json({ error: 'Add your name and a comment before posting.' })
+    if (!trimmedText) {
+      res.status(400).json({ error: 'Add a comment before posting.' })
       return
     }
     if (!visitorId || typeof visitorId !== 'string') {
@@ -68,13 +67,27 @@ async function handler(req, res) {
       return
     }
 
+    // A signed-in reader's name always comes from their account, never
+    // whatever the client happened to send — otherwise a logged-in reader
+    // could post under a different display name than the one their
+    // profile and byline show everywhere else, or than their own account
+    // uses elsewhere. Anonymous commenters still type their own name.
     const readerAccountId = getReaderAccountId(req)
+    let finalName = typeof name === 'string' ? name.trim().slice(0, MAX_NAME_LENGTH) : ''
+    if (readerAccountId) {
+      const account = await getAccountById(readerAccountId)
+      if (account) finalName = account.displayName
+    }
+    if (!finalName) {
+      res.status(400).json({ error: 'Add your name and a comment before posting.' })
+      return
+    }
 
     const comment = await createComment({
       id: crypto.randomUUID(),
       postSlug,
       parentId: parentId || null,
-      name: trimmedName,
+      name: finalName,
       text: trimmedText,
       mentionOf: typeof mentionOf === 'string' ? mentionOf.slice(0, MAX_NAME_LENGTH) : null,
       visitorId,
