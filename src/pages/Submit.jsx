@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom'
 import { createPost, getPostBySlug, updatePost } from '../data/postStore'
+import { uploadPostImage } from '../data/accountStore'
 import { coverPresets } from '../data/coverPresets'
 import { parsePostBody, serializePostBody } from '../lib/postBody'
 import { estimateReadingTime } from '../lib/estimateReadingTime'
@@ -65,6 +66,8 @@ export function Submit() {
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
   const [result, setResult] = useState(null)
+  const [uploadingBodyImage, setUploadingBodyImage] = useState(false)
+  const bodyTextareaRef = useRef(null)
 
   useEffect(() => {
     if (!existing) return
@@ -76,6 +79,34 @@ export function Submit() {
   }, [existing])
 
   const submissions = getMySubmissions()
+
+  const handleBodyImageUpload = async (event) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+    setUploadingBodyImage(true)
+    setError('')
+    try {
+      const url = await uploadPostImage(file)
+      const textarea = bodyTextareaRef.current
+      const insertion = `![](${url})`
+      if (textarea) {
+        const start = textarea.selectionStart ?? bodyText.length
+        const end = textarea.selectionEnd ?? bodyText.length
+        const before = bodyText.slice(0, start)
+        const after = bodyText.slice(end)
+        const needsLeadingBreak = before && !before.endsWith('\n\n')
+        const needsTrailingBreak = after && !after.startsWith('\n\n')
+        setBodyText(`${before}${needsLeadingBreak ? '\n\n' : ''}${insertion}${needsTrailingBreak ? '\n\n' : ''}${after}`)
+      } else {
+        setBodyText((current) => `${current}${current ? '\n\n' : ''}${insertion}`)
+      }
+    } catch (err) {
+      setError(err.message || 'Could not upload that image.')
+    } finally {
+      setUploadingBodyImage(false)
+      event.target.value = ''
+    }
+  }
 
   const handleSubmit = async (event) => {
     event.preventDefault()
@@ -297,7 +328,20 @@ export function Submit() {
 
         <label className="field">
           <span>Body</span>
+          <div className="body-tabs">
+            <label className="btn btn-ghost insert-image-btn">
+              {uploadingBodyImage ? 'Uploading…' : 'Insert image'}
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/gif"
+                onChange={handleBodyImageUpload}
+                disabled={uploadingBodyImage}
+                hidden
+              />
+            </label>
+          </div>
           <textarea
+            ref={bodyTextareaRef}
             className="body-editor"
             value={bodyText}
             onChange={(event) => setBodyText(event.target.value)}

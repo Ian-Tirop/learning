@@ -2,6 +2,7 @@
 // numbers pulled from the database (no page-view tracking exists, so this
 // never includes visits or traffic).
 import { api } from '../lib/apiClient'
+import { fileToDataUrl } from '../lib/fileToDataUrl'
 
 export async function getAnalytics() {
   return api.get('/api/admin/analytics')
@@ -61,4 +62,16 @@ export async function warnReader(accountId, note) {
 /** Permanently deletes a reader account. */
 export async function deleteReaderAccount(accountId) {
   return api.post('/api/admin/reader-delete', { accountId })
+}
+
+export async function getAdminAvatar() {
+  const data = await api.get('/api/admin/avatar')
+  return data.avatarUrl
+}
+
+/** Uploads a new avatar image for the admin identity. */
+export async function uploadAdminAvatar(file) {
+  const image = await fileToDataUrl(file)
+  const data = await api.post('/api/admin/avatar', { image })
+  return data.avatarUrl
 }

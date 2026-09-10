@@ -190,3 +190,11 @@ CREATE TABLE IF NOT EXISTS account_warnings (
 );
 
 CREATE INDEX IF NOT EXISTS account_warnings_account_id_idx ON account_warnings(account_id);
+
+-- Optional profile picture + nickname for a reader account. Both purely
+-- cosmetic — nickname is shown alongside display_name on the reader's own
+-- profile, never substituted for it elsewhere (comments/posts/bylines all
+-- still attribute to display_name), so adding it never touches any of the
+-- existing attribution call sites.
+ALTER TABLE accounts ADD COLUMN IF NOT EXISTS avatar_url text;
+ALTER TABLE accounts ADD COLUMN IF NOT EXISTS nickname text;

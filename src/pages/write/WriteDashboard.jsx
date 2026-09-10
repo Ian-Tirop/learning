@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { deletePost, getAllPosts, updatePost } from '../../data/postStore'
-import { getAnalytics, deleteCommentAsAdmin } from '../../data/adminStore'
+import { getAnalytics, deleteCommentAsAdmin, getAdminAvatar, uploadAdminAvatar } from '../../data/adminStore'
 import { PostCover } from '../../components/PostCover'
 import { SecurityPanel } from '../admin/SecurityPanel'
 import { ReaderDetailModal } from './ReaderDetailModal'
@@ -375,6 +375,55 @@ const TABS = [
   { key: 'security', label: 'Security', icon: 'user-icon' },
 ]
 
+function AdminAvatarUploadForm({ avatarUrl, onUploaded }) {
+  const showToast = useToast()
+  const inputRef = useRef(null)
+  const [uploading, setUploading] = useState(false)
+
+  const handleFileChange = async (event) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    try {
+      const url = await uploadAdminAvatar(file)
+      onUploaded(url)
+      showToast('Profile picture updated.', { type: 'success' })
+    } catch (err) {
+      showToast(err.message || 'Could not upload that image.', { type: 'error' })
+    } finally {
+      setUploading(false)
+      if (inputRef.current) inputRef.current.value = ''
+    }
+  }
+
+  return (
+    <div className="settings-card">
+      <h3 className="settings-card-title">Profile picture</h3>
+      <p className="body-hint">PNG, JPEG, WebP, or GIF, up to 5MB.</p>
+      <div className="avatar-upload-row">
+        {avatarUrl ? (
+          <img src={avatarUrl} alt="" className="profile-avatar profile-avatar-sm profile-avatar-photo" />
+        ) : (
+          <div className="profile-avatar profile-avatar-sm" aria-hidden="true">
+            IT
+          </div>
+        )}
+        <label className="btn btn-ghost">
+          {uploading ? 'Uploading…' : 'Upload photo'}
+          <input
+            ref={inputRef}
+            type="file"
+            accept="image/png,image/jpeg,image/webp,image/gif"
+            onChange={handleFileChange}
+            disabled={uploading}
+            hidden
+          />
+        </label>
+      </div>
+    </div>
+  )
+}
+
 export function WriteDashboard() {
   useDocumentTitle('Write — Ian Tirop')
   useMetaRobots()
@@ -389,6 +438,7 @@ export function WriteDashboard() {
   const [reviewNote, setReviewNote] = useState('')
   const [activeTab, setActiveTab] = useState('overview')
   const [viewingAccountId, setViewingAccountId] = useState(null)
+  const [avatarUrl, setAvatarUrl] = useState(null)
 
   const refresh = () => {
     setLoading(true)
@@ -401,7 +451,10 @@ export function WriteDashboard() {
   }
 
   useEffect(() => {
-    if (isAdmin) refresh()
+    if (isAdmin) {
+      refresh()
+      getAdminAvatar().then(setAvatarUrl).catch(() => {})
+    }
   }, [isAdmin])
 
   if (!authLoading && !isAdmin) {
@@ -434,9 +487,13 @@ export function WriteDashboard() {
   return (
     <section className="container write-page profile-page">
       <div className="profile-header">
-        <div className="profile-avatar" aria-hidden="true">
-          IT
-        </div>
+        {avatarUrl ? (
+          <img src={avatarUrl} alt="" className="profile-avatar profile-avatar-photo" />
+        ) : (
+          <div className="profile-avatar" aria-hidden="true">
+            IT
+          </div>
+        )}
         <div className="profile-header-info">
           <p className="eyebrow">Admin</p>
           <h1>Ian Tirop</h1>
@@ -643,6 +700,7 @@ export function WriteDashboard() {
       {activeTab === 'security' && (
         <div className="profile-panel">
           <h2 className="profile-section-title">Security</h2>
+          <AdminAvatarUploadForm avatarUrl={avatarUrl} onUploaded={setAvatarUrl} />
           <SecurityPanel />
         </div>
       )}

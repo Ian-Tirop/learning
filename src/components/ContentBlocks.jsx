@@ -61,6 +61,13 @@ function ContentBlock({ block, id }) {
       return <CodeBlock text={block.text} />
     case 'quote':
       return <blockquote>{block.text}</blockquote>
+    case 'image':
+      return (
+        <figure className="post-image">
+          <img src={block.src} alt={block.text || ''} loading="lazy" />
+          {block.text && <figcaption>{block.text}</figcaption>}
+        </figure>
+      )
     default:
       return <p>{block.text}</p>
   }

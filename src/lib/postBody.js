@@ -1,12 +1,17 @@
 // A tiny markdown-ish format that maps directly onto the post content-block
-// schema ({ type: 'p' | 'h3' | 'code' | 'quote', text }) used by BlogPost.
+// schema ({ type: 'p' | 'h3' | 'code' | 'quote' | 'image', text }) used by
+// BlogPost.
 //
 //   ### A heading           -> { type: 'h3' }
 //   > A pulled quote        -> { type: 'quote' }
 //   ```                     -> { type: 'code' } (fenced, can span lines)
 //   code
 //   ```
+//   ![alt](url)             -> { type: 'image', src, text: alt } — standard
+//                              markdown image syntax, its own line
 //   Anything else           -> { type: 'p' } (blank-line separated)
+
+const IMAGE_LINE = /^!\[([^\]]*)\]\((\S+)\)$/
 
 export function parsePostBody(markdown) {
   const blocks = []
@@ -51,6 +56,14 @@ export function parsePostBody(markdown) {
       continue
     }
 
+    const imageMatch = trimmed.match(IMAGE_LINE)
+    if (imageMatch) {
+      flushParagraph()
+      blocks.push({ type: 'image', src: imageMatch[2], text: imageMatch[1] })
+      i++
+      continue
+    }
+
     if (trimmed === '') {
       flushParagraph()
       i++
@@ -71,6 +84,7 @@ export function serializePostBody(content) {
       if (block.type === 'h3') return `### ${block.text}`
       if (block.type === 'quote') return `> ${block.text}`
       if (block.type === 'code') return `\`\`\`\n${block.text}\n\`\`\``
+      if (block.type === 'image') return `![${block.text || ''}](${block.src})`
       return block.text
     })
     .join('\n\n')

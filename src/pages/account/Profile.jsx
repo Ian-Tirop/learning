@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { getMyPosts, getLikedPosts, getSavedPosts, getFollowing, toggleFollow } from '../../data/accountStore'
 import { getAllPosts } from '../../data/postStore'
@@ -75,6 +75,7 @@ function WriterRow({ writer, onUnfollow }) {
 function ProfileDetailsForm({ account, updateProfile }) {
   const [displayName, setDisplayName] = useState(account.displayName)
   const [email, setEmail] = useState(account.email)
+  const [nickname, setNickname] = useState(account.nickname || '')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
@@ -85,7 +86,7 @@ function ProfileDetailsForm({ account, updateProfile }) {
     setError('')
     setSuccess(false)
     try {
-      await updateProfile({ displayName, email })
+      await updateProfile({ displayName, email, nickname })
       setSuccess(true)
     } catch (err) {
       setError(err.message || 'Could not update your profile.')
@@ -122,6 +123,18 @@ function ProfileDetailsForm({ account, updateProfile }) {
           />
         </label>
       </div>
+      <label className="field">
+        <span>Nickname (optional)</span>
+        <input
+          type="text"
+          value={nickname}
+          placeholder="Shown on your own profile only"
+          onChange={(event) => {
+            setNickname(event.target.value)
+            setSuccess(false)
+          }}
+        />
+      </label>
       {error && (
         <p className="comment-error" role="alert">
           {error}
@@ -134,6 +147,54 @@ function ProfileDetailsForm({ account, updateProfile }) {
         </button>
       </div>
     </form>
+  )
+}
+
+function AvatarUploadForm({ account, uploadAvatar }) {
+  const showToast = useToast()
+  const inputRef = useRef(null)
+  const [uploading, setUploading] = useState(false)
+
+  const handleFileChange = async (event) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    try {
+      await uploadAvatar(file)
+      showToast('Profile picture updated.', { type: 'success' })
+    } catch (err) {
+      showToast(err.message || 'Could not upload that image.', { type: 'error' })
+    } finally {
+      setUploading(false)
+      if (inputRef.current) inputRef.current.value = ''
+    }
+  }
+
+  return (
+    <div className="settings-card">
+      <h3 className="settings-card-title">Profile picture</h3>
+      <p className="body-hint">PNG, JPEG, WebP, or GIF, up to 5MB.</p>
+      <div className="avatar-upload-row">
+        {account.avatarUrl ? (
+          <img src={account.avatarUrl} alt="" className="profile-avatar profile-avatar-sm profile-avatar-photo" />
+        ) : (
+          <div className="profile-avatar profile-avatar-sm" aria-hidden="true">
+            {initials(account.displayName)}
+          </div>
+        )}
+        <label className="btn btn-ghost">
+          {uploading ? 'Uploading…' : 'Upload photo'}
+          <input
+            ref={inputRef}
+            type="file"
+            accept="image/png,image/jpeg,image/webp,image/gif"
+            onChange={handleFileChange}
+            disabled={uploading}
+            hidden
+          />
+        </label>
+      </div>
+    </div>
   )
 }
 
@@ -218,7 +279,7 @@ function ChangePasswordForm({ changePassword }) {
 export function Profile() {
   useDocumentTitle('Your profile — Ian Tirop')
   useMetaRobots()
-  const { account, loading: authLoading, logout, updateProfile, changePassword } = useAccount()
+  const { account, loading: authLoading, logout, updateProfile, changePassword, uploadAvatar } = useAccount()
   const showToast = useToast()
 
   const [posts, setPosts] = useState([])
@@ -280,12 +341,19 @@ export function Profile() {
   return (
     <section className="container write-page profile-page">
       <div className="profile-header">
-        <div className="profile-avatar" aria-hidden="true">
-          {initials(account.displayName)}
-        </div>
+        {account.avatarUrl ? (
+          <img src={account.avatarUrl} alt="" className="profile-avatar profile-avatar-photo" />
+        ) : (
+          <div className="profile-avatar" aria-hidden="true">
+            {initials(account.displayName)}
+          </div>
+        )}
         <div className="profile-header-info">
           <p className="eyebrow">Your profile</p>
-          <h1>{account.displayName}</h1>
+          <h1>
+            {account.displayName}
+            {account.nickname && <span className="profile-nickname"> "{account.nickname}"</span>}
+          </h1>
           <p className="write-intro">
             {account.email} · Member since {formatDate(account.createdAt)}
           </p>
@@ -449,6 +517,7 @@ export function Profile() {
         <div className="profile-panel">
           <h2 className="profile-section-title">Account settings</h2>
           <div className="profile-settings-forms">
+            <AvatarUploadForm account={account} uploadAvatar={uploadAvatar} />
             <ProfileDetailsForm account={account} updateProfile={updateProfile} />
             <ChangePasswordForm changePassword={changePassword} />
           </div>

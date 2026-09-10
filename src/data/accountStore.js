@@ -2,6 +2,7 @@
 // separate from the single admin login; see AccountContext for the
 // provider that wraps this in React state.
 import { api } from '../lib/apiClient'
+import { fileToDataUrl } from '../lib/fileToDataUrl'
 
 export async function signup({ email, password, displayName }) {
   const data = await api.post('/api/accounts/signup', { email, password, displayName })
@@ -51,9 +52,23 @@ export async function getFollowing() {
   return data.accounts
 }
 
-export async function updateProfile({ displayName, email }) {
-  const data = await api.post('/api/accounts/update-profile', { displayName, email })
+export async function updateProfile({ displayName, email, nickname }) {
+  const data = await api.post('/api/accounts/update-profile', { displayName, email, nickname })
   return data.account
+}
+
+/** Uploads a new avatar image for the signed-in reader's account. */
+export async function uploadAvatar(file) {
+  const image = await fileToDataUrl(file)
+  const data = await api.post('/api/accounts/upload-avatar', { image })
+  return data.account
+}
+
+/** Uploads an image for use as a post cover or inline in the body — works for a signed-in reader or admin. */
+export async function uploadPostImage(file) {
+  const image = await fileToDataUrl(file)
+  const data = await api.post('/api/accounts/upload-image', { image })
+  return data.url
 }
 
 export async function changePassword({ currentPassword, newPassword }) {

@@ -278,6 +278,12 @@
   background: linear-gradient(135deg, var(--accent), var(--accent-2));
 }
 
+.author-avatar-photo {
+  object-fit: cover;
+  background: none;
+  border: 1px solid var(--border);
+}
+
 .author-name {
   font-size: 15px;
   font-weight: 600;

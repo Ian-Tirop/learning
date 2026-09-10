@@ -248,10 +248,38 @@
   }
 }
 
+.cover-upload-pick {
+  display: grid;
+  place-items: center;
+  width: 92px;
+  height: 92px;
+  padding: 3px;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  color: var(--text);
+  border-radius: 15px;
+  border: 2px dashed var(--border);
+  cursor: pointer;
+  transition: border-color 0.2s var(--ease), color 0.2s var(--ease);
+
+  &:hover {
+    border-color: var(--accent-border);
+    color: var(--accent);
+  }
+}
+
 .body-tabs {
   display: flex;
+  align-items: center;
   gap: 4px;
   margin-bottom: 10px;
+}
+
+.insert-image-btn {
+  margin-left: auto;
+  padding: 7px 16px;
+  font-size: 13px;
 }
 
 .body-tab {

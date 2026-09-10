@@ -261,9 +261,13 @@ function BlogPostView({ slug }) {
       <Reveal>
         {post.author ? (
           <div className="author-card">
-            <div className="author-avatar" aria-hidden="true">
-              {initials(post.author.displayName)}
-            </div>
+            {post.author.avatarUrl ? (
+              <img src={post.author.avatarUrl} alt="" className="author-avatar author-avatar-photo" />
+            ) : (
+              <div className="author-avatar" aria-hidden="true">
+                {initials(post.author.displayName)}
+              </div>
+            )}
             <div className="author-card-info">
               <p className="author-name">Written by {post.author.displayName}</p>
               <p className="author-followers">

@@ -20,6 +20,7 @@ import {
   getSavedPostsForAccount,
   toggleFollow,
   getFollowedAccounts,
+  updateAccountAvatar,
 } from '../_lib/db.js'
 import {
   hashPassword,
@@ -28,8 +29,10 @@ import {
   buildReaderSessionCookie,
   buildClearReaderCookie,
   getReaderAccountId,
+  isAdminRequest,
 } from '../_lib/auth.js'
 import { sendPasswordResetEmail, getSiteUrl } from '../_lib/email.js'
+import { uploadImageFromDataUrl } from '../_lib/upload.js'
 import { withErrorHandling } from '../_lib/http.js'
 
 async function handleSignup(req, res) {
@@ -170,6 +173,7 @@ async function handleUpdateProfile(req, res) {
   const body = req.body || {}
   const displayName = typeof body.displayName === 'string' ? body.displayName.trim() : ''
   const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : ''
+  const nickname = typeof body.nickname === 'string' ? body.nickname.trim() : ''
 
   if (!displayName) {
     res.status(400).json({ error: 'Your name is required.' })
@@ -186,8 +190,35 @@ async function handleUpdateProfile(req, res) {
     return
   }
 
-  const account = await updateAccountProfile(accountId, { displayName, email })
+  const account = await updateAccountProfile(accountId, { displayName, email, nickname })
   res.status(200).json({ account })
+}
+
+async function handleUploadAvatar(req, res) {
+  const accountId = getReaderAccountId(req)
+  if (!accountId) {
+    res.status(401).json({ error: 'Sign in to upload an avatar.' })
+    return
+  }
+  const url = await uploadImageFromDataUrl(req.body?.image, `avatars/${accountId}`)
+  const account = await updateAccountAvatar(accountId, url)
+  res.status(200).json({ account })
+}
+
+// Shared by both the reader-facing Submit page and the admin editor for
+// post cover art and inline body images — an exception to this file's
+// usual reader-only scope, made here (rather than as its own function)
+// purely because Vercel's Hobby plan caps a project at 12 serverless
+// functions and this project is already at that limit.
+async function handleUploadImage(req, res) {
+  const accountId = getReaderAccountId(req)
+  const admin = isAdminRequest(req)
+  if (!accountId && !admin) {
+    res.status(401).json({ error: 'Sign in to upload an image.' })
+    return
+  }
+  const url = await uploadImageFromDataUrl(req.body?.image, `posts/${accountId || 'admin'}`)
+  res.status(200).json({ url })
 }
 
 async function handleChangePassword(req, res) {
@@ -272,6 +303,8 @@ async function handler(req, res) {
   if (action === 'follow-toggle' && req.method === 'POST') return handleFollowToggle(req, res)
   if (action === 'following' && req.method === 'GET') return handleFollowing(req, res)
   if (action === 'update-profile' && req.method === 'POST') return handleUpdateProfile(req, res)
+  if (action === 'upload-avatar' && req.method === 'POST') return handleUploadAvatar(req, res)
+  if (action === 'upload-image' && req.method === 'POST') return handleUploadImage(req, res)
   if (action === 'change-password' && req.method === 'POST') return handleChangePassword(req, res)
   if (action === 'forgot-password' && req.method === 'POST') return handleForgotPassword(req, res)
   if (action === 'reset-password' && req.method === 'POST') return handleResetPassword(req, res)

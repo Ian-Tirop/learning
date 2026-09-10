@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { createPost, getPostBySlug, updatePost } from '../../data/postStore'
+import { uploadPostImage } from '../../data/accountStore'
 import { coverPresets, findMatchingPreset } from '../../data/coverPresets'
 import { PostCover } from '../../components/PostCover'
 import { ContentBlocks } from '../../components/ContentBlocks'
@@ -86,6 +87,9 @@ function PostEditorForm({ slug, isNew }) {
   const [scheduledAt, setScheduledAt] = useState('')
   const [seriesName, setSeriesName] = useState('')
   const [seriesOrder, setSeriesOrder] = useState('')
+  const [uploadingCover, setUploadingCover] = useState(false)
+  const [uploadingBodyImage, setUploadingBodyImage] = useState(false)
+  const bodyTextareaRef = useRef(null)
 
   useEffect(() => {
     if (!existing) return
@@ -97,7 +101,7 @@ function PostEditorForm({ slug, isNew }) {
     setBodyText(serializePostBody(existing.content))
     setReadingTimeValue(String(existing.readingTime))
     setReadingTimeTouched(true)
-    setCover(findMatchingPreset(existing.cover))
+    setCover(existing.cover?.type === 'image' ? existing.cover : findMatchingPreset(existing.cover))
     setLinkLabel(existing.link?.label || '')
     setLinkHref(existing.link?.href || '')
     setScheduledAt(toDatetimeLocalValue(existing.scheduledAt))
@@ -141,6 +145,51 @@ function PostEditorForm({ slug, isNew }) {
   const handleReadingTimeChange = (value) => {
     setReadingTimeTouched(true)
     setReadingTimeValue(value)
+  }
+
+  const handleCoverUpload = async (event) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+    setUploadingCover(true)
+    setError('')
+    try {
+      const url = await uploadPostImage(file)
+      setCover({ type: 'image', url })
+    } catch (err) {
+      setError(err.message || 'Could not upload that image.')
+    } finally {
+      setUploadingCover(false)
+      event.target.value = ''
+    }
+  }
+
+  const handleBodyImageUpload = async (event) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+    setUploadingBodyImage(true)
+    setError('')
+    try {
+      const url = await uploadPostImage(file)
+      const textarea = bodyTextareaRef.current
+      const insertion = `![](${url})`
+      if (textarea) {
+        const start = textarea.selectionStart ?? bodyText.length
+        const end = textarea.selectionEnd ?? bodyText.length
+        const before = bodyText.slice(0, start)
+        const after = bodyText.slice(end)
+        const needsLeadingBreak = before && !before.endsWith('\n\n')
+        const needsTrailingBreak = after && !after.startsWith('\n\n')
+        const next = `${before}${needsLeadingBreak ? '\n\n' : ''}${insertion}${needsTrailingBreak ? '\n\n' : ''}${after}`
+        setBodyText(next)
+      } else {
+        setBodyText((current) => `${current}${current ? '\n\n' : ''}${insertion}`)
+      }
+    } catch (err) {
+      setError(err.message || 'Could not upload that image.')
+    } finally {
+      setUploadingBodyImage(false)
+      event.target.value = ''
+    }
   }
 
   const buildData = (status) => ({
@@ -317,8 +366,14 @@ function PostEditorForm({ slug, isNew }) {
         <div className="field">
           <span>Cover</span>
           <div className="cover-picker">
+            {cover.type === 'image' && (
+              <button type="button" className="cover-pick selected" aria-pressed="true" aria-label="Uploaded cover image">
+                <PostCover cover={cover} size="thumb" />
+              </button>
+            )}
             {coverPresets.map((preset, index) => {
               const isSelected =
+                cover.type !== 'image' &&
                 preset.icon === cover.icon &&
                 preset.from === cover.from &&
                 preset.to === cover.to &&
@@ -336,6 +391,20 @@ function PostEditorForm({ slug, isNew }) {
                 </button>
               )
             })}
+            <label className="cover-pick cover-upload-pick">
+              {uploadingCover ? (
+                <span className="loading-note">Uploading…</span>
+              ) : (
+                <span>Upload your own</span>
+              )}
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/gif"
+                onChange={handleCoverUpload}
+                disabled={uploadingCover}
+                hidden
+              />
+            </label>
           </div>
         </div>
 
@@ -355,11 +424,24 @@ function PostEditorForm({ slug, isNew }) {
             >
               Preview
             </button>
+            {mode === 'write' && (
+              <label className="btn btn-ghost insert-image-btn">
+                {uploadingBodyImage ? 'Uploading…' : 'Insert image'}
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/gif"
+                  onChange={handleBodyImageUpload}
+                  disabled={uploadingBodyImage}
+                  hidden
+                />
+              </label>
+            )}
           </div>
 
           {mode === 'write' ? (
             <>
               <textarea
+                ref={bodyTextareaRef}
                 className="body-editor"
                 value={bodyText}
                 onChange={(event) => setBodyText(event.target.value)}
@@ -373,7 +455,8 @@ function PostEditorForm({ slug, isNew }) {
               />
               <p className="body-hint">
                 Blank line = new paragraph · <code>### heading</code> ·{' '}
-                <code>&gt; quote</code> · <code>```code```</code>
+                <code>&gt; quote</code> · <code>```code```</code> ·{' '}
+                <code>Insert image</code> to add a photo at your cursor
               </p>
             </>
           ) : (

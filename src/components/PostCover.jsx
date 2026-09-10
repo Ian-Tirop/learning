@@ -3,6 +3,14 @@ import './PostCover.css'
 export function PostCover({ cover, size = 'banner' }) {
   if (!cover) return null
 
+  if (cover.type === 'image') {
+    return (
+      <div className={`post-cover post-cover-${size} post-cover-photo`}>
+        <img src={cover.url} alt="" />
+      </div>
+    )
+  }
+
   const { icon, from, to, angle = 135, pattern = 'dots' } = cover
 
   return (

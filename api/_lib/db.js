@@ -447,6 +447,8 @@ function mapAccountRow(row) {
     id: row.id,
     email: row.email,
     displayName: row.display_name,
+    avatarUrl: row.avatar_url || null,
+    nickname: row.nickname || null,
     createdAt: row.created_at,
   }
 }
@@ -485,11 +487,18 @@ export async function getAccountByIdForAuth(id) {
   return rows[0] || null
 }
 
-export async function updateAccountProfile(id, { displayName, email }) {
+export async function updateAccountProfile(id, { displayName, email, nickname }) {
   const rows = await sql`
-    UPDATE accounts SET display_name = ${displayName}, email = ${email}
+    UPDATE accounts SET display_name = ${displayName}, email = ${email}, nickname = ${nickname || null}
     WHERE id = ${id}
     RETURNING *
+  `
+  return rows[0] ? mapAccountRow(rows[0]) : null
+}
+
+export async function updateAccountAvatar(id, avatarUrl) {
+  const rows = await sql`
+    UPDATE accounts SET avatar_url = ${avatarUrl} WHERE id = ${id} RETURNING *
   `
   return rows[0] ? mapAccountRow(rows[0]) : null
 }
@@ -546,7 +555,9 @@ export async function toggleFollow(followerId, writerId) {
 // email. `viewerAccountId` is null for a logged-out visitor, in which case
 // isFollowing is always false rather than hitting the follows table.
 export async function getAuthorInfo(accountId, viewerAccountId) {
-  const rows = await sql`SELECT id, display_name, created_at FROM accounts WHERE id = ${accountId} LIMIT 1`
+  const rows = await sql`
+    SELECT id, display_name, avatar_url, created_at FROM accounts WHERE id = ${accountId} LIMIT 1
+  `
   const account = rows[0]
   if (!account) return null
 
@@ -559,7 +570,13 @@ export async function getAuthorInfo(accountId, viewerAccountId) {
     isFollowing = followRows.length > 0
   }
 
-  return { id: account.id, displayName: account.display_name, followerCount: count, isFollowing }
+  return {
+    id: account.id,
+    displayName: account.display_name,
+    avatarUrl: account.avatar_url || null,
+    followerCount: count,
+    isFollowing,
+  }
 }
 
 // Every writer this account follows, for the profile's Following tab —

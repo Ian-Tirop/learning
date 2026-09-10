@@ -285,6 +285,24 @@
     }
   }
 
+  .post-image {
+    margin: 24px 0;
+
+    img {
+      display: block;
+      width: 100%;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+    }
+
+    figcaption {
+      margin-top: 8px;
+      font-size: 13px;
+      color: var(--text);
+      text-align: center;
+    }
+  }
+
   /* Syntax highlighting (highlight.js token classes), mapped onto the
      site's own palette — no new colors introduced. */
   .hljs-comment,

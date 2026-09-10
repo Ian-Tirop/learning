@@ -43,6 +43,7 @@ import {
   getSiteUrl,
 } from '../_lib/email.js'
 import { generateTotpSecret, otpauthUrl, verifyTotpCode } from '../_lib/totp.js'
+import { uploadImageFromDataUrl } from '../_lib/upload.js'
 import { withErrorHandling } from '../_lib/http.js'
 
 async function isTwoFactorEnabled() {
@@ -218,6 +219,20 @@ async function handler(req, res) {
     }
     await setAdminSetting('admin_email', trimmed)
     res.status(200).json({ ok: true })
+    return
+  }
+
+  if (action === 'avatar' && req.method === 'GET') {
+    if (!requireAdmin(req, res)) return
+    res.status(200).json({ avatarUrl: await getAdminSetting('admin_avatar_url') })
+    return
+  }
+
+  if (action === 'avatar' && req.method === 'POST') {
+    if (!requireAdmin(req, res)) return
+    const url = await uploadImageFromDataUrl(req.body?.image, 'avatars/admin')
+    await setAdminSetting('admin_avatar_url', url)
+    res.status(200).json({ avatarUrl: url })
     return
   }
 
