@@ -121,6 +121,32 @@ export async function sendCommentReplyNotification(email, { replierName, comment
   )
 }
 
+// A free-form message from Ian to a specific reader, sent from the admin
+// dashboard's reader-detail view — not a template, just a subject/body the
+// admin typed themselves.
+export async function sendAccountContactEmail(email, subject, message) {
+  return sendEmail(
+    email,
+    subject,
+    `<p>${message.replace(/\n/g, '<br />')}</p><p style="font-size:12px;color:#666">— Ian, via ${getSiteUrl()}</p>`,
+  )
+}
+
+// A more serious, templated counterpart to sendAccountContactEmail — issued
+// alongside a permanent account_warnings row, so the account has a record
+// of it even if the email itself never arrives (Resend unconfigured, etc.).
+export async function sendAccountWarningEmail(email, note) {
+  return sendEmail(
+    email,
+    'A note about your account',
+    `
+      <p>Ian left a note on your account on ${getSiteUrl()}:</p>
+      <blockquote style="margin:8px 0;padding-left:12px;border-left:3px solid #ccc;color:#444">${note}</blockquote>
+      <p style="font-size:12px;color:#666">If anything here is unclear, feel free to reply to reach Ian directly.</p>
+    `,
+  )
+}
+
 export async function sendPublishNotification(post, subscriberEmails) {
   if (!isConfigured() || subscriberEmails.length === 0) return { sent: false }
 

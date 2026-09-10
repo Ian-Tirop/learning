@@ -93,6 +93,16 @@
   }
 }
 
+.btn-danger {
+  color: #fff;
+  background: var(--danger);
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 22px 48px -12px rgba(220, 38, 38, 0.4);
+  }
+}
+
 .loading-note {
   font-size: 14px;
   color: var(--text);

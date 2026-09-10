@@ -37,3 +37,28 @@ export async function getRecoveryEmail() {
 export async function setRecoveryEmail(email) {
   return api.post('/api/admin/recovery-email', { email })
 }
+
+/** Full admin-facing view of one reader account: their posts, comments, and warning history. */
+export async function getReaderDetail(accountId) {
+  return api.get(`/api/admin/reader-detail?accountId=${encodeURIComponent(accountId)}`)
+}
+
+/** Sends that reader a password-reset email, same flow as their own "forgot password". */
+export async function forceReaderPasswordReset(accountId) {
+  return api.post('/api/admin/reader-force-reset', { accountId })
+}
+
+/** A free-form email from Ian to this reader. */
+export async function contactReader(accountId, subject, message) {
+  return api.post('/api/admin/reader-contact', { accountId, subject, message })
+}
+
+/** Issues a warning: a permanent note on the account, plus an email to the reader. */
+export async function warnReader(accountId, note) {
+  return api.post('/api/admin/reader-warn', { accountId, note })
+}
+
+/** Permanently deletes a reader account. */
+export async function deleteReaderAccount(accountId) {
+  return api.post('/api/admin/reader-delete', { accountId })
+}

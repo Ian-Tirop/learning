@@ -582,6 +582,53 @@ export async function getFollowedAccounts(followerId) {
   }))
 }
 
+// Every comment a specific reader account has ever left, newest first,
+// with enough post context to link back to it — the admin-facing
+// counterpart to getCommentsForPost, which is scoped by post instead of by
+// commenter.
+export async function getCommentsForAccount(accountId) {
+  const rows = await sql`
+    SELECT c.id, c.post_slug, c.body, c.created_at, p.title AS post_title
+    FROM comments c
+    JOIN posts p ON p.slug = c.post_slug
+    WHERE c.account_id = ${accountId}
+    ORDER BY c.created_at DESC
+  `
+  return rows.map((row) => ({
+    id: row.id,
+    postSlug: row.post_slug,
+    postTitle: row.post_title,
+    text: row.body,
+    createdAt: row.created_at,
+  }))
+}
+
+// Permanently removes a reader account. posts/comments/post_reactions keep
+// existing (author_account_id/account_id just become null, per the schema's
+// ON DELETE SET NULL) — only saved_posts and follows rows actually vanish,
+// per their ON DELETE CASCADE. Irreversible; the caller is responsible for
+// confirming with the admin first.
+export async function deleteAccount(id) {
+  await sql`DELETE FROM accounts WHERE id = ${id}`
+}
+
+export async function createAccountWarning(accountId, note) {
+  const id = crypto.randomUUID()
+  await sql`
+    INSERT INTO account_warnings (id, account_id, note) VALUES (${id}, ${accountId}, ${note})
+  `
+  return { id, accountId, note }
+}
+
+export async function getAccountWarnings(accountId) {
+  const rows = await sql`
+    SELECT id, note, created_at FROM account_warnings
+    WHERE account_id = ${accountId}
+    ORDER BY created_at DESC
+  `
+  return rows.map((row) => ({ id: row.id, note: row.note, createdAt: row.created_at }))
+}
+
 // Real numbers from what the site actually tracks (engagement + review
 // queue + accounts) — there's no page-view/traffic pipeline here, so this
 // never reports visits or unique-visitor counts, only what's genuinely in

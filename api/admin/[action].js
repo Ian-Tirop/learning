@@ -26,8 +26,22 @@ import {
   getAdminSetting,
   setAdminSetting,
   deleteAdminSetting,
+  getAccountById,
+  getPostsForAccount,
+  getCommentsForAccount,
+  deleteAccount,
+  createAccountWarning,
+  getAccountWarnings,
+  setPasswordResetToken,
 } from '../_lib/db.js'
-import { sendPublishNotification, sendAdminSecurityAlert } from '../_lib/email.js'
+import {
+  sendPublishNotification,
+  sendAdminSecurityAlert,
+  sendPasswordResetEmail,
+  sendAccountContactEmail,
+  sendAccountWarningEmail,
+  getSiteUrl,
+} from '../_lib/email.js'
 import { generateTotpSecret, otpauthUrl, verifyTotpCode } from '../_lib/totp.js'
 import { withErrorHandling } from '../_lib/http.js'
 
@@ -237,6 +251,100 @@ async function handler(req, res) {
       }
     }
     res.status(200).json({ published: published.length })
+    return
+  }
+
+  // Everything below is the admin-facing reader-account management view —
+  // "View" on a reader in the Analytics tab's accounts drill-down opens
+  // this. All require admin auth and take the target reader's accountId,
+  // as distinct from api/accounts/[action].js's self-service actions,
+  // which only ever act on the caller's own session.
+
+  if (action === 'reader-detail' && req.method === 'GET') {
+    if (!requireAdmin(req, res)) return
+    const accountId = req.query?.accountId
+    if (!accountId) {
+      res.status(400).json({ error: 'An accountId is required.' })
+      return
+    }
+    const account = await getAccountById(accountId)
+    if (!account) {
+      res.status(404).json({ error: 'No account with that id.' })
+      return
+    }
+    const [posts, comments, warnings] = await Promise.all([
+      getPostsForAccount(accountId),
+      getCommentsForAccount(accountId),
+      getAccountWarnings(accountId),
+    ])
+    res.status(200).json({ account, posts, comments, warnings })
+    return
+  }
+
+  if (action === 'reader-force-reset' && req.method === 'POST') {
+    if (!requireAdmin(req, res)) return
+    const { accountId } = req.body || {}
+    const account = accountId ? await getAccountById(accountId) : null
+    if (!account) {
+      res.status(404).json({ error: 'No account with that id.' })
+      return
+    }
+    const token = crypto.randomUUID()
+    const expires = new Date(Date.now() + 30 * 60 * 1000)
+    await setPasswordResetToken(account.email, token, expires)
+    const resetUrl = `${getSiteUrl()}/account/reset-password?email=${encodeURIComponent(account.email)}&token=${token}`
+    const { sent } = await sendPasswordResetEmail(account.email, resetUrl)
+    res.status(200).json({ ok: true, emailSent: sent })
+    return
+  }
+
+  if (action === 'reader-contact' && req.method === 'POST') {
+    if (!requireAdmin(req, res)) return
+    const { accountId, subject, message } = req.body || {}
+    const account = accountId ? await getAccountById(accountId) : null
+    if (!account) {
+      res.status(404).json({ error: 'No account with that id.' })
+      return
+    }
+    const trimmedSubject = typeof subject === 'string' ? subject.trim() : ''
+    const trimmedMessage = typeof message === 'string' ? message.trim() : ''
+    if (!trimmedSubject || !trimmedMessage) {
+      res.status(400).json({ error: 'A subject and message are both required.' })
+      return
+    }
+    const { sent } = await sendAccountContactEmail(account.email, trimmedSubject, trimmedMessage)
+    res.status(200).json({ ok: true, emailSent: sent })
+    return
+  }
+
+  if (action === 'reader-warn' && req.method === 'POST') {
+    if (!requireAdmin(req, res)) return
+    const { accountId, note } = req.body || {}
+    const account = accountId ? await getAccountById(accountId) : null
+    if (!account) {
+      res.status(404).json({ error: 'No account with that id.' })
+      return
+    }
+    const trimmedNote = typeof note === 'string' ? note.trim() : ''
+    if (!trimmedNote) {
+      res.status(400).json({ error: 'A note is required for a warning.' })
+      return
+    }
+    const warning = await createAccountWarning(accountId, trimmedNote)
+    const { sent } = await sendAccountWarningEmail(account.email, trimmedNote)
+    res.status(201).json({ warning, emailSent: sent })
+    return
+  }
+
+  if (action === 'reader-delete' && req.method === 'POST') {
+    if (!requireAdmin(req, res)) return
+    const { accountId } = req.body || {}
+    if (!accountId) {
+      res.status(400).json({ error: 'An accountId is required.' })
+      return
+    }
+    await deleteAccount(accountId)
+    res.status(200).json({ ok: true })
     return
   }
 

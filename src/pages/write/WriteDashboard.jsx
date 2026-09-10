@@ -4,6 +4,7 @@ import { deletePost, getAllPosts, updatePost } from '../../data/postStore'
 import { getAnalytics, deleteCommentAsAdmin } from '../../data/adminStore'
 import { PostCover } from '../../components/PostCover'
 import { SecurityPanel } from '../admin/SecurityPanel'
+import { ReaderDetailModal } from './ReaderDetailModal'
 import { useDocumentTitle } from '../../hooks/useDocumentTitle'
 import { useMetaRobots } from '../../hooks/useMetaRobots'
 import { useAdmin } from '../../context/AdminContext'
@@ -66,7 +67,7 @@ function PostDetailList({ posts, emptyMessage }) {
   )
 }
 
-function AnalyticsDetail({ activeKey, data, reportedComments, onDeleteComment }) {
+function AnalyticsDetail({ activeKey, data, reportedComments, onDeleteComment, onViewAccount }) {
   if (!activeKey) return null
 
   const { posts, accounts, subscribers, feedback, recentComments } = data
@@ -118,9 +119,12 @@ function AnalyticsDetail({ activeKey, data, reportedComments, onDeleteComment })
                 <strong>{account.displayName}</strong>
                 <span className="analytics-detail-sub">{account.email}</span>
               </div>
-              <span>
+              <span className="reader-account-row-end">
                 {account.postCount} {account.postCount === 1 ? 'post' : 'posts'} · joined{' '}
                 {formatDate(account.createdAt)}
+                <button type="button" className="comment-action-btn" onClick={() => onViewAccount(account.id)}>
+                  View
+                </button>
               </span>
             </li>
           ))}
@@ -209,7 +213,7 @@ function AnalyticsDetail({ activeKey, data, reportedComments, onDeleteComment })
   )
 }
 
-function AnalyticsBody({ data }) {
+function AnalyticsBody({ data, onViewAccount }) {
   const [activeKey, setActiveKey] = useState(null)
   const [reportedComments, setReportedComments] = useState(data.reportedComments)
   const { totals, topLiked, topCommented, topRated, trending } = data
@@ -248,6 +252,7 @@ function AnalyticsBody({ data }) {
         data={data}
         reportedComments={reportedComments}
         onDeleteComment={handleDeleteComment}
+        onViewAccount={onViewAccount}
       />
 
       <div className="analytics-columns">
@@ -383,6 +388,7 @@ export function WriteDashboard() {
   const [reviewNoteFor, setReviewNoteFor] = useState(null)
   const [reviewNote, setReviewNote] = useState('')
   const [activeTab, setActiveTab] = useState('overview')
+  const [viewingAccountId, setViewingAccountId] = useState(null)
 
   const refresh = () => {
     setLoading(true)
@@ -630,7 +636,7 @@ export function WriteDashboard() {
         <div className="profile-panel">
           <h2 className="profile-section-title">Analytics</h2>
           {!analytics && <p className="loading-note">Loading analytics…</p>}
-          {analytics && <AnalyticsBody data={analytics} />}
+          {analytics && <AnalyticsBody data={analytics} onViewAccount={setViewingAccountId} />}
         </div>
       )}
 
@@ -639,6 +645,14 @@ export function WriteDashboard() {
           <h2 className="profile-section-title">Security</h2>
           <SecurityPanel />
         </div>
+      )}
+
+      {viewingAccountId && (
+        <ReaderDetailModal
+          accountId={viewingAccountId}
+          onClose={() => setViewingAccountId(null)}
+          onDeleted={() => refresh()}
+        />
       )}
     </section>
   )

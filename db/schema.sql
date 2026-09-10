@@ -177,3 +177,16 @@ CREATE TABLE IF NOT EXISTS follows (
 );
 
 CREATE INDEX IF NOT EXISTS follows_writer_id_idx ON follows(writer_id);
+
+-- Admin-issued warnings against a reader account — a persistent moderation
+-- trail, separate from ordinary reader-submitted comment_reports. Each row
+-- is also emailed to the account at the time it's issued (see
+-- sendAccountWarningEmail); this table is the durable record of that.
+CREATE TABLE IF NOT EXISTS account_warnings (
+  id text PRIMARY KEY,
+  account_id text NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+  note text NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS account_warnings_account_id_idx ON account_warnings(account_id);

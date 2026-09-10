@@ -1,0 +1,122 @@
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 40px 20px;
+  overflow-y: auto;
+  background: rgba(8, 6, 13, 0.5);
+  backdrop-filter: blur(2px);
+  animation: modal-overlay-in 0.2s var(--ease);
+}
+
+@keyframes modal-overlay-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.modal-card {
+  position: relative;
+  width: 100%;
+  max-width: 640px;
+  padding: 32px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  box-shadow: var(--shadow-lift);
+  animation: modal-card-in 0.25s var(--ease);
+}
+
+@keyframes modal-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.modal-close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--code-bg);
+  color: var(--text-h);
+  cursor: pointer;
+  transition: border-color 0.2s var(--ease);
+
+  .icon {
+    width: 14px;
+    height: 14px;
+  }
+
+  &:hover {
+    border-color: var(--accent-border);
+    color: var(--accent);
+  }
+}
+
+.reader-detail-header {
+  padding-right: 40px;
+  margin-bottom: 24px;
+}
+
+.reader-detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 8px;
+
+  .btn {
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+}
+
+.reader-detail-panel {
+  margin: 16px 0;
+  padding: 20px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--code-bg);
+}
+
+.reader-detail-section {
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+
+  h3 {
+    font-size: 15px;
+    margin-bottom: 12px;
+  }
+}
+
+@media (max-width: 640px) {
+  .modal-overlay {
+    padding: 16px;
+  }
+
+  .modal-card {
+    padding: 24px;
+  }
+
+  .reader-detail-actions .btn {
+    flex: 1;
+    justify-content: center;
+  }
+}

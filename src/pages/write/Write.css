@@ -603,6 +603,12 @@
   color: var(--text);
 }
 
+.reader-account-row-end {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 @media (max-width: 640px) {
   .write-row {
     flex-wrap: wrap;
