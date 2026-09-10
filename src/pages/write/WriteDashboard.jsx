@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, Navigate } from 'react-router-dom'
+import { Link, Navigate, useLocation } from 'react-router-dom'
 import { deletePost, getAllPosts, updatePost } from '../../data/postStore'
 import { getAnalytics, deleteCommentAsAdmin, getAdminAvatar, uploadAdminAvatar } from '../../data/adminStore'
 import { PostCover } from '../../components/PostCover'
@@ -454,7 +454,8 @@ export function WriteDashboard() {
   const [confirmingSlug, setConfirmingSlug] = useState(null)
   const [reviewNoteFor, setReviewNoteFor] = useState(null)
   const [reviewNote, setReviewNote] = useState('')
-  const [activeTab, setActiveTab] = useState('overview')
+  const location = useLocation()
+  const [activeTab, setActiveTab] = useState(location.state?.tab || 'overview')
   const [viewingAccountId, setViewingAccountId] = useState(null)
   const [postsFilter, setPostsFilter] = useState('all')
   const [avatarUrl, setAvatarUrl] = useState(null)
@@ -599,7 +600,7 @@ export function WriteDashboard() {
                   </p>
                 </div>
                 <div className="write-row-actions">
-                  <Link to={getPostPath(post)} className="comment-action-btn">
+                  <Link to={getPostPath(post)} state={{ adminTab: 'review' }} className="comment-action-btn">
                     Preview
                   </Link>
                   <Link to={`/write/${post.slug}`} className="comment-action-btn">
@@ -690,7 +691,7 @@ export function WriteDashboard() {
                   </p>
                 </div>
                 <div className="write-row-actions">
-                  <Link to={getPostPath(post)} className="comment-action-btn">
+                  <Link to={getPostPath(post)} state={{ adminTab: 'posts' }} className="comment-action-btn">
                     Preview
                   </Link>
                   <Link to={`/write/${post.slug}`} className="comment-action-btn">

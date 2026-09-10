@@ -164,12 +164,21 @@ function BlogPostView({ slug }) {
     <article className="container post-page">
       <ReadingProgress />
 
-      <Link to={post.submittedByName ? '/community' : '/blog'} className="back-link">
-        <svg className="icon" role="presentation" aria-hidden="true">
-          <use href="/icons.svg#arrow-icon"></use>
-        </svg>
-        Back to all posts
-      </Link>
+      {location.state?.adminTab ? (
+        <Link to="/write" state={{ tab: location.state.adminTab }} className="back-link">
+          <svg className="icon" role="presentation" aria-hidden="true">
+            <use href="/icons.svg#arrow-icon"></use>
+          </svg>
+          Back
+        </Link>
+      ) : (
+        <Link to={post.submittedByName ? '/community' : '/blog'} className="back-link">
+          <svg className="icon" role="presentation" aria-hidden="true">
+            <use href="/icons.svg#arrow-icon"></use>
+          </svg>
+          Back to all posts
+        </Link>
+      )}
 
       <PostCover cover={post.cover} size="banner" />
 
