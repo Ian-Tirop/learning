@@ -189,6 +189,11 @@ function CommentEntry({
       <div className="comment-body">
         <div className="comment-meta">
           <span className="comment-name">{entry.name}</span>
+          {!entry.accountId && (
+            <span className="guest-badge" title="Posted without a reader account — this name isn't verified">
+              Guest
+            </span>
+          )}
           <span className="comment-date">
             {formatRelativeDate(entry.date)}
             {entry.editedAt ? ' · edited' : ''}
