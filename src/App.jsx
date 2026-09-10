@@ -1,6 +1,7 @@
 import { Route, Routes, useLocation } from 'react-router-dom'
 import { Nav } from './components/Nav'
 import { Footer } from './components/Footer'
+import { ScrollToTop } from './components/ScrollToTop'
 import { Home } from './pages/Home'
 import { Blog } from './pages/Blog'
 import { Community } from './pages/Community'
@@ -45,6 +46,7 @@ function App() {
           <a href="#main-content" className="skip-link">
             Skip to content
           </a>
+          <ScrollToTop />
           <Nav />
           <main className="site-main" id="main-content" tabIndex={-1}>
             <PageTransition>
