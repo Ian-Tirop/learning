@@ -614,10 +614,11 @@ export async function deleteAccount(id) {
 
 export async function createAccountWarning(accountId, note) {
   const id = crypto.randomUUID()
-  await sql`
+  const rows = await sql`
     INSERT INTO account_warnings (id, account_id, note) VALUES (${id}, ${accountId}, ${note})
+    RETURNING created_at
   `
-  return { id, accountId, note }
+  return { id, accountId, note, createdAt: rows[0].created_at }
 }
 
 export async function getAccountWarnings(accountId) {
