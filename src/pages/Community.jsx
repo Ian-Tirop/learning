@@ -36,7 +36,7 @@ export function Community() {
     <section className="container blog-page">
       <div className="section-heading">
         <p className="eyebrow">Community</p>
-        <h1>From our readers</h1>
+        <h1>From our fellow visionaries</h1>
         <p className="blog-intro">
           {posts.length} posts submitted by readers through{' '}
           <Link to="/submit">Write</Link> and approved for publishing —
