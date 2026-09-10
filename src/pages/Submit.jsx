@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom'
 import { createPost, getPostBySlug, updatePost } from '../data/postStore'
 import { uploadPostImage } from '../data/accountStore'
-import { coverPresets } from '../data/coverPresets'
+import { coverPresets, findMatchingPreset } from '../data/coverPresets'
+import { PostCover } from '../components/PostCover'
 import { parsePostBody, serializePostBody } from '../lib/postBody'
 import { estimateReadingTime } from '../lib/estimateReadingTime'
 import { getMySubmissions, addMySubmission } from '../lib/mySubmissions'
@@ -67,6 +68,10 @@ export function Submit() {
   const [saving, setSaving] = useState(false)
   const [result, setResult] = useState(null)
   const [uploadingBodyImage, setUploadingBodyImage] = useState(false)
+  const [uploadingCover, setUploadingCover] = useState(false)
+  const [cover, setCover] = useState(() => randomCover())
+  const [readingTimeValue, setReadingTimeValue] = useState('1')
+  const [readingTimeTouched, setReadingTimeTouched] = useState(false)
   const bodyTextareaRef = useRef(null)
 
   useEffect(() => {
@@ -76,6 +81,9 @@ export function Submit() {
     setTagsInput(existing.tags.join(', '))
     setBodyText(serializePostBody(existing.content))
     setLinkHref(existing.link?.href || '')
+    setCover(existing.cover?.type === 'image' ? existing.cover : findMatchingPreset(existing.cover))
+    setReadingTimeValue(String(existing.readingTime))
+    setReadingTimeTouched(true)
   }, [existing])
 
   const submissions = getMySubmissions()
@@ -130,9 +138,9 @@ export function Submit() {
       excerpt: excerpt.trim(),
       content: parsedContent,
       tags,
-      cover: existing?.cover || randomCover(),
+      cover,
       date: new Date().toISOString().slice(0, 10),
-      readingTime: estimateReadingTime(parsedContent),
+      readingTime: effectiveReadingTime,
       link: linkHref.trim() ? { href: linkHref.trim(), label: 'Read more' } : null,
     }
 
@@ -242,6 +250,32 @@ export function Submit() {
     )
   }
 
+  const parsedContent = parsePostBody(bodyText)
+  const effectiveReadingTime = readingTimeTouched
+    ? Math.max(1, Number(readingTimeValue) || 1)
+    : estimateReadingTime(parsedContent)
+
+  const handleReadingTimeChange = (value) => {
+    setReadingTimeTouched(true)
+    setReadingTimeValue(value)
+  }
+
+  const handleCoverUpload = async (event) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+    setUploadingCover(true)
+    setError('')
+    try {
+      const url = await uploadPostImage(file)
+      setCover({ type: 'image', url })
+    } catch (err) {
+      setError(err.message || 'Could not upload that image.')
+    } finally {
+      setUploadingCover(false)
+      event.target.value = ''
+    }
+  }
+
   return (
     <section className="container write-page submit-page">
       <div className="write-header">
@@ -326,6 +360,47 @@ export function Submit() {
           />
         </label>
 
+        <div className="field">
+          <span>Cover</span>
+          <div className="cover-picker">
+            {cover.type === 'image' && (
+              <button type="button" className="cover-pick selected" aria-pressed="true" aria-label="Uploaded cover image">
+                <PostCover cover={cover} size="thumb" />
+              </button>
+            )}
+            {coverPresets.map((preset, index) => {
+              const isSelected =
+                cover.type !== 'image' &&
+                preset.icon === cover.icon &&
+                preset.from === cover.from &&
+                preset.to === cover.to &&
+                preset.angle === cover.angle
+              return (
+                <button
+                  key={index}
+                  type="button"
+                  className={`cover-pick${isSelected ? ' selected' : ''}`}
+                  onClick={() => setCover(preset)}
+                  aria-pressed={isSelected}
+                  aria-label={`Use ${preset.icon.replace('-icon', '')} cover`}
+                >
+                  <PostCover cover={preset} size="thumb" />
+                </button>
+              )
+            })}
+            <label className="cover-pick cover-upload-pick">
+              {uploadingCover ? <span className="loading-note">Uploading…</span> : <span>Upload your own</span>}
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/gif"
+                onChange={handleCoverUpload}
+                disabled={uploadingCover}
+                hidden
+              />
+            </label>
+          </div>
+        </div>
+
         <label className="field">
           <span>Body</span>
           <div className="body-tabs">
@@ -357,6 +432,30 @@ export function Submit() {
             Blank line = new paragraph · <code>### heading</code> · <code>&gt; quote</code> ·{' '}
             <code>```code```</code>
           </p>
+        </label>
+
+        <label className="field reading-time-field">
+          <span>Reading time (minutes)</span>
+          <div className="reading-time-row">
+            <input
+              type="number"
+              min="1"
+              value={readingTimeValue}
+              onChange={(event) => handleReadingTimeChange(event.target.value)}
+            />
+            {readingTimeTouched && (
+              <button
+                type="button"
+                className="comment-action-btn"
+                onClick={() => {
+                  setReadingTimeTouched(false)
+                  setReadingTimeValue(String(estimateReadingTime(parsedContent)))
+                }}
+              >
+                Use auto-estimate
+              </button>
+            )}
+          </div>
         </label>
 
         <div className="write-form-actions">
