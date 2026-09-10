@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
-import { Link, Navigate, useSearchParams, useParams } from 'react-router-dom'
+import { Link, Navigate, useLocation, useSearchParams, useParams } from 'react-router-dom'
 import { getAllPosts, getPostBySlug } from '../data/postStore'
 import { getPostExtras } from '../data/postExtras'
 import { getRelatedPosts } from '../lib/postRanking'
 import { getHeadings } from '../lib/headings'
+import { getPostPath } from '../lib/postUrl'
 import { countWords } from '../lib/estimateReadingTime'
 import { usePostEngagement } from '../hooks/usePostEngagement'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
@@ -35,6 +36,7 @@ export function BlogPost() {
 }
 
 function BlogPostView({ slug }) {
+  const location = useLocation()
   const [searchParams] = useSearchParams()
   const token = searchParams.get('token') || undefined
   const { effectiveIsAdmin } = useAdmin()
@@ -115,6 +117,20 @@ function BlogPostView({ slug }) {
     )
   }
 
+  // A published post's canonical URL depends on who wrote it (/blog for
+  // Ian's own, /community for a reader's) — bounce anyone who reached it
+  // under the other prefix (an old link, a stale bookmark, a search
+  // result) to the correct one. Only applies once published: a pending
+  // post's owner uses /blog/:slug?token=... to check on it regardless of
+  // who eventually gets credited, and that link is generated before the
+  // post's fate is known.
+  if (post.status === 'published') {
+    const canonicalPath = getPostPath(post)
+    if (location.pathname !== canonicalPath) {
+      return <Navigate to={canonicalPath} replace />
+    }
+  }
+
   const publishedOrder = related.filter((candidate) => candidate.status === 'published')
   const currentIndex = publishedOrder.findIndex((candidate) => candidate.slug === post.slug)
   const prev = currentIndex >= 0 ? publishedOrder[currentIndex + 1] : undefined
@@ -148,7 +164,7 @@ function BlogPostView({ slug }) {
     <article className="container post-page">
       <ReadingProgress />
 
-      <Link to="/blog" className="back-link">
+      <Link to={post.submittedByName ? '/community' : '/blog'} className="back-link">
         <svg className="icon" role="presentation" aria-hidden="true">
           <use href="/icons.svg#arrow-icon"></use>
         </svg>
@@ -199,7 +215,7 @@ function BlogPostView({ slug }) {
                     Part {seriesPost.seriesOrder}: {seriesPost.title}
                   </span>
                 ) : (
-                  <Link to={`/blog/${seriesPost.slug}`}>
+                  <Link to={getPostPath(seriesPost)}>
                     Part {seriesPost.seriesOrder}: {seriesPost.title}
                   </Link>
                 )}
@@ -326,7 +342,7 @@ function BlogPostView({ slug }) {
           <div className="related-grid">
             {relatedPosts.map((relatedPost, index) => (
               <Reveal as="div" key={relatedPost.slug} delay={index * 90}>
-                <Link to={`/blog/${relatedPost.slug}`} className="card related-card">
+                <Link to={getPostPath(relatedPost)} className="card related-card">
                   <PostCover cover={relatedPost.cover} size="card" />
                   <div className="related-card-body">
                     <h3>{relatedPost.title}</h3>
@@ -342,7 +358,7 @@ function BlogPostView({ slug }) {
       {post.status === 'published' && (prev || next) && (
         <Reveal as="nav" className="post-nav">
           {prev ? (
-            <Link to={`/blog/${prev.slug}`} className="card post-nav-link">
+            <Link to={getPostPath(prev)} className="card post-nav-link">
               <span className="post-nav-label">← Older</span>
               <span className="post-nav-title">{prev.title}</span>
             </Link>
@@ -350,7 +366,7 @@ function BlogPostView({ slug }) {
             <span />
           )}
           {next && (
-            <Link to={`/blog/${next.slug}`} className="card post-nav-link next">
+            <Link to={getPostPath(next)} className="card post-nav-link next">
               <span className="post-nav-label">Newer →</span>
               <span className="post-nav-title">{next.title}</span>
             </Link>

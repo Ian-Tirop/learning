@@ -11,6 +11,7 @@ import { useAdmin } from '../../context/AdminContext'
 import { useToast } from '../../context/ToastContext'
 import { useCountUp } from '../../hooks/useCountUp'
 import { formatDate } from '../../lib/formatDate'
+import { getPostPath } from '../../lib/postUrl'
 import '../account/Account.css'
 import './Write.css'
 
@@ -264,7 +265,7 @@ function AnalyticsBody({ data, onViewAccount }) {
           <ul className="analytics-list">
             {topLiked.map((post) => (
               <li key={post.slug}>
-                <Link to={`/blog/${post.slug}`}>{post.title}</Link>
+                <Link to={getPostPath(post)}>{post.title}</Link>
                 <span>{post.likes} 👍</span>
               </li>
             ))}
@@ -277,7 +278,7 @@ function AnalyticsBody({ data, onViewAccount }) {
           <ul className="analytics-list">
             {topCommented.map((post) => (
               <li key={post.slug}>
-                <Link to={`/blog/${post.slug}`}>{post.title}</Link>
+                <Link to={getPostPath(post)}>{post.title}</Link>
                 <span>{post.comments} 💬</span>
               </li>
             ))}
@@ -290,7 +291,7 @@ function AnalyticsBody({ data, onViewAccount }) {
           <ul className="analytics-list">
             {topRated.map((post) => (
               <li key={post.slug}>
-                <Link to={`/blog/${post.slug}`}>{post.title}</Link>
+                <Link to={getPostPath(post)}>{post.title}</Link>
                 <span>
                   {post.average.toFixed(1)} ★ ({post.count})
                 </span>
@@ -306,7 +307,7 @@ function AnalyticsBody({ data, onViewAccount }) {
           <ul className="analytics-list">
             {trending.map((post) => (
               <li key={post.slug}>
-                <Link to={`/blog/${post.slug}`}>{post.title}</Link>
+                <Link to={getPostPath(post)}>{post.title}</Link>
                 <span>{post.comments} 💬</span>
               </li>
             ))}
@@ -356,7 +357,7 @@ function OverviewPanel({ analytics, pendingCount, onGoToReview }) {
           <ul className="analytics-list">
             {trending.map((post) => (
               <li key={post.slug}>
-                <Link to={`/blog/${post.slug}`}>{post.title}</Link>
+                <Link to={getPostPath(post)}>{post.title}</Link>
                 <span>{post.comments} 💬</span>
               </li>
             ))}
@@ -598,7 +599,7 @@ export function WriteDashboard() {
                   </p>
                 </div>
                 <div className="write-row-actions">
-                  <Link to={`/blog/${post.slug}`} className="comment-action-btn">
+                  <Link to={getPostPath(post)} className="comment-action-btn">
                     Preview
                   </Link>
                   <Link to={`/write/${post.slug}`} className="comment-action-btn">
@@ -689,7 +690,7 @@ export function WriteDashboard() {
                   </p>
                 </div>
                 <div className="write-row-actions">
-                  <Link to={`/blog/${post.slug}`} className="comment-action-btn">
+                  <Link to={getPostPath(post)} className="comment-action-btn">
                     Preview
                   </Link>
                   <Link to={`/write/${post.slug}`} className="comment-action-btn">

@@ -708,11 +708,11 @@ export async function getSiteAnalytics() {
     // freshly "trending". Comments always had created_at, seed data
     // included, so this doesn't need any schema backfill to be accurate.
     sql`
-      SELECT c.post_slug, p.title, COUNT(*)::int AS count
+      SELECT c.post_slug, p.title, p.submitted_by_name, COUNT(*)::int AS count
       FROM comments c
       JOIN posts p ON p.slug = c.post_slug
       WHERE c.created_at > now() - interval '7 days' AND p.status = 'published'
-      GROUP BY c.post_slug, p.title
+      GROUP BY c.post_slug, p.title, p.submitted_by_name
       ORDER BY count DESC
       LIMIT 5
     `,
@@ -753,10 +753,15 @@ export async function getSiteAnalytics() {
   const topLiked = [...published]
     .sort((a, b) => b.seed.likes - a.seed.likes)
     .slice(0, 5)
-    .map((post) => ({ slug: post.slug, title: post.title, likes: post.seed.likes }))
+    .map((post) => ({ slug: post.slug, title: post.title, submittedByName: post.submittedByName, likes: post.seed.likes }))
 
   const topCommented = published
-    .map((post) => ({ slug: post.slug, title: post.title, comments: commentCountBySlug[post.slug] || 0 }))
+    .map((post) => ({
+      slug: post.slug,
+      title: post.title,
+      submittedByName: post.submittedByName,
+      comments: commentCountBySlug[post.slug] || 0,
+    }))
     .sort((a, b) => b.comments - a.comments)
     .slice(0, 5)
 
@@ -767,6 +772,7 @@ export async function getSiteAnalytics() {
     .map((post) => ({
       slug: post.slug,
       title: post.title,
+      submittedByName: post.submittedByName,
       average: post.seed.ratingSum / post.seed.ratingCount,
       count: post.seed.ratingCount,
     }))
@@ -788,7 +794,12 @@ export async function getSiteAnalytics() {
     topLiked,
     topCommented,
     topRated,
-    trending: trendingRows.map((row) => ({ slug: row.post_slug, title: row.title, comments: row.count })),
+    trending: trendingRows.map((row) => ({
+      slug: row.post_slug,
+      title: row.title,
+      submittedByName: row.submitted_by_name || undefined,
+      comments: row.count,
+    })),
     mostFollowed: mostFollowedRows.map((row) => ({
       id: row.id,
       displayName: row.display_name,

@@ -13,6 +13,7 @@ import { formatDate } from '../lib/formatDate'
 import { getMostLiked } from '../lib/postRanking'
 import { getTagCounts } from '../lib/tagCounts'
 import { isRecent } from '../lib/isRecent'
+import { getPostPath } from '../lib/postUrl'
 import './Home.css'
 
 export function Home() {
@@ -140,7 +141,7 @@ export default function IanTirop() {
             [0, 1, 2].map((i) => <SkeletonPostCard key={i} />)}
           {!loading && latest.map((post, index) => (
             <Reveal as="div" key={post.slug} delay={index * 90}>
-              <Link to={`/blog/${post.slug}`} className="card post-card">
+              <Link to={getPostPath(post)} className="card post-card">
                 <PostCover cover={post.cover} size="card" />
                 <div className="post-card-body">
                   <p className="post-date">
@@ -181,7 +182,7 @@ export default function IanTirop() {
           <ul className="favorite-list">
             {favorites.map((post, index) => (
               <Reveal as="li" key={post.slug} delay={index * 80}>
-                <Link to={`/blog/${post.slug}`} className="favorite-row">
+                <Link to={getPostPath(post)} className="favorite-row">
                   <span className="favorite-rank">{index + 1}</span>
                   <PostCover cover={post.cover} size="thumb" />
                   <div className="favorite-main">

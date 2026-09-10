@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { getAllPosts } from '../data/postStore'
 import { searchPosts, getMatchSnippet } from '../lib/searchPosts'
 import { formatDate } from '../lib/formatDate'
+import { getPostPath } from '../lib/postUrl'
 import './NavSearch.css'
 
 export function NavSearch() {
@@ -95,7 +96,7 @@ export function NavSearch() {
                 const snippet = getMatchSnippet(post, query)
                 return (
                   <li key={post.slug}>
-                    <Link to={`/blog/${post.slug}`} onClick={close}>
+                    <Link to={getPostPath(post)} onClick={close}>
                       <span className="nav-search-result-title">{post.title}</span>
                       {snippet ? (
                         <span className="nav-search-result-snippet">{snippet}</span>

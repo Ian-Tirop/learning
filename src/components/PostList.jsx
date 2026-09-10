@@ -11,6 +11,7 @@ import { Reveal } from './Reveal'
 import { formatDate } from '../lib/formatDate'
 import { searchPosts } from '../lib/searchPosts'
 import { isRecent } from '../lib/isRecent'
+import { getPostPath } from '../lib/postUrl'
 
 export function PostList({ posts, loading, emptyMessage }) {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -84,7 +85,7 @@ export function PostList({ posts, loading, emptyMessage }) {
         {!loading &&
           visiblePosts.map((post, index) => (
             <Reveal as="li" key={post.slug} delay={Math.min(index, 8) * 60}>
-              <Link to={`/blog/${post.slug}`} className="post-row">
+              <Link to={getPostPath(post)} className="post-row">
                 <PostCover cover={post.cover} size="thumb" />
                 <div className="post-row-main">
                   <h2>

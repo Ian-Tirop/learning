@@ -11,6 +11,7 @@ import { writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 import { posts as staticPosts } from '../src/data/posts.js'
+import { getPostPath } from '../src/lib/postUrl.js'
 
 const siteUrl = (process.env.SITE_URL || 'https://example.com').replace(/\/$/, '')
 if (!process.env.SITE_URL) {
@@ -32,8 +33,11 @@ async function loadPublishedPosts() {
   try {
     const { neon } = await import('@neondatabase/serverless')
     const sql = neon(connectionString)
-    const rows = await sql`SELECT slug, title, excerpt, date, content FROM posts WHERE status = 'published' ORDER BY date DESC`
-    return rows
+    const rows = await sql`
+      SELECT slug, title, excerpt, date, content, submitted_by_name
+      FROM posts WHERE status = 'published' ORDER BY date DESC
+    `
+    return rows.map((row) => ({ ...row, submittedByName: row.submitted_by_name }))
   } catch (error) {
     console.warn('[generate-feeds] Could not reach the database, falling back to static seed posts:', error.message)
     return staticPosts.filter((post) => post.status !== 'draft')
@@ -59,7 +63,7 @@ function escapeXml(value) {
 
 function buildSitemap(published) {
   const staticRoutes = ['/', '/blog', '/community', '/about', '/contact']
-  const postRoutes = published.map((post) => `/blog/${post.slug}`)
+  const postRoutes = published.map((post) => getPostPath(post))
   const urls = [...staticRoutes, ...postRoutes]
     .map((route) => `  <url><loc>${escapeXml(siteUrl + route)}</loc></url>`)
     .join('\n')
@@ -88,8 +92,8 @@ function buildRss(published) {
     .map(
       (post) => `  <item>
     <title>${escapeXml(post.title)}</title>
-    <link>${escapeXml(`${siteUrl}/blog/${post.slug}`)}</link>
-    <guid>${escapeXml(`${siteUrl}/blog/${post.slug}`)}</guid>
+    <link>${escapeXml(`${siteUrl}${getPostPath(post)}`)}</link>
+    <guid>${escapeXml(`${siteUrl}${getPostPath(post)}`)}</guid>
     <pubDate>${new Date(post.date).toUTCString()}</pubDate>
     <description>${escapeXml(post.excerpt)}</description>
     <content:encoded><![CDATA[${contentToHtml(post.content)}]]></content:encoded>

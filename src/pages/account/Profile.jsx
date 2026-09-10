@@ -11,6 +11,7 @@ import { useMetaRobots } from '../../hooks/useMetaRobots'
 import { useCountUp } from '../../hooks/useCountUp'
 import { formatDate } from '../../lib/formatDate'
 import { initials } from '../../lib/initials'
+import { getPostPath } from '../../lib/postUrl'
 import '../write/Write.css'
 import './Account.css'
 
@@ -41,7 +42,7 @@ function ArticleRow({ post }) {
         <p className="write-row-meta">{formatDate(post.date)}</p>
       </div>
       <div className="write-row-actions">
-        <Link to={`/blog/${post.slug}`} className="comment-action-btn">
+        <Link to={getPostPath(post)} className="comment-action-btn">
           Read
         </Link>
       </div>
@@ -460,7 +461,7 @@ export function Profile() {
                   </p>
                 </div>
                 <div className="write-row-actions">
-                  <Link to={`/blog/${post.slug}`} className="comment-action-btn">
+                  <Link to={getPostPath(post)} className="comment-action-btn">
                     Preview
                   </Link>
                   <Link to={`/submit/edit/${post.slug}`} className="comment-action-btn">
