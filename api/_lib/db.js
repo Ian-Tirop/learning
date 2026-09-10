@@ -380,12 +380,12 @@ export async function toggleCommentReport(commentId, visitorId) {
 
 export async function getReportedComments() {
   const rows = await sql`
-    SELECT c.id, c.name, c.body, c.post_slug, p.title AS post_title,
+    SELECT c.id, c.name, c.body, c.post_slug, c.account_id, p.title AS post_title,
       COUNT(r.visitor_id)::int AS report_count
     FROM comment_reports r
     JOIN comments c ON c.id = r.comment_id
     JOIN posts p ON p.slug = c.post_slug
-    GROUP BY c.id, c.name, c.body, c.post_slug, p.title
+    GROUP BY c.id, c.name, c.body, c.post_slug, c.account_id, p.title
     ORDER BY report_count DESC, c.id
   `
   return rows.map((row) => ({
@@ -394,8 +394,20 @@ export async function getReportedComments() {
     text: row.body,
     postSlug: row.post_slug,
     postTitle: row.post_title,
+    accountId: row.account_id || null,
     reportCount: row.report_count,
   }))
+}
+
+// Follower/following counts for one account — the admin reader-detail
+// view's counterpart to getAuthorInfo, which only ever returns a follower
+// count (a public byline never needs to show who an account follows).
+export async function getFollowCounts(accountId) {
+  const [[{ count: followerCount }], [{ count: followingCount }]] = await Promise.all([
+    sql`SELECT COUNT(*)::int AS count FROM follows WHERE writer_id = ${accountId}`,
+    sql`SELECT COUNT(*)::int AS count FROM follows WHERE follower_id = ${accountId}`,
+  ])
+  return { followerCount, followingCount }
 }
 
 export async function toggleCommentReaction(commentId, visitorId, emoji) {
@@ -675,13 +687,14 @@ export async function getSiteAnalytics() {
     feedback,
     trendingRows,
     reportedComments,
+    mostFollowedRows,
   ] = await Promise.all([
     getAllPostsForAdmin(null),
     sql`SELECT post_slug, COUNT(*)::int AS count FROM comments GROUP BY post_slug`,
     sql`SELECT COUNT(*)::int AS count FROM comments`,
     sql`SELECT id, email, display_name, created_at FROM accounts ORDER BY created_at DESC`,
     sql`
-      SELECT c.id, c.name, c.body, c.post_slug, c.created_at, p.title AS post_title
+      SELECT c.id, c.name, c.body, c.post_slug, c.account_id, c.created_at, p.title AS post_title
       FROM comments c
       JOIN posts p ON p.slug = c.post_slug
       ORDER BY c.created_at DESC
@@ -704,6 +717,14 @@ export async function getSiteAnalytics() {
       LIMIT 5
     `,
     getReportedComments(),
+    sql`
+      SELECT a.id, a.display_name, COUNT(f.follower_id)::int AS follower_count
+      FROM follows f
+      JOIN accounts a ON a.id = f.writer_id
+      GROUP BY a.id, a.display_name
+      ORDER BY follower_count DESC
+      LIMIT 5
+    `,
   ])
 
   const commentCountBySlug = Object.fromEntries(commentCountRows.map((row) => [row.post_slug, row.count]))
@@ -768,6 +789,11 @@ export async function getSiteAnalytics() {
     topCommented,
     topRated,
     trending: trendingRows.map((row) => ({ slug: row.post_slug, title: row.title, comments: row.count })),
+    mostFollowed: mostFollowedRows.map((row) => ({
+      id: row.id,
+      displayName: row.display_name,
+      followerCount: row.follower_count,
+    })),
     reportedComments,
     // Full lists (not just top 5) — the frontend uses these for the
     // click-to-drill-down detail view on each stat card.
@@ -796,6 +822,7 @@ export async function getSiteAnalytics() {
       text: row.body,
       postSlug: row.post_slug,
       postTitle: row.post_title,
+      accountId: row.account_id || null,
       createdAt: row.created_at,
     })),
     subscribers: subscribers.map((row) => ({ email: row.email, subscribedAt: row.subscribed_at })),

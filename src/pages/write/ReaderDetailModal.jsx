@@ -6,9 +6,11 @@ import {
   contactReader,
   warnReader,
   deleteReaderAccount,
+  removeReaderAvatar,
 } from '../../data/adminStore'
 import { useToast } from '../../context/ToastContext'
 import { formatDate } from '../../lib/formatDate'
+import { initials } from '../../lib/initials'
 import './ReaderDetailModal.css'
 
 const STATUS_LABEL = { draft: 'Draft', published: 'Published', pending: 'Pending review', rejected: 'Rejected', scheduled: 'Scheduled' }
@@ -119,6 +121,19 @@ export function ReaderDetailModal({ accountId, onClose, onDeleted }) {
     }
   }
 
+  const handleRemoveAvatar = async () => {
+    setBusy(true)
+    try {
+      const { account } = await removeReaderAvatar(accountId)
+      setDetail((current) => ({ ...current, account: { ...current.account, avatarUrl: account.avatarUrl } }))
+      showToast('Avatar removed.')
+    } catch (err) {
+      showToast(err.message || 'Could not remove that right now.', { type: 'error' })
+    } finally {
+      setBusy(false)
+    }
+  }
+
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div
@@ -139,10 +154,29 @@ export function ReaderDetailModal({ accountId, onClose, onDeleted }) {
         {detail && (
           <>
             <div className="reader-detail-header">
-              <h2>{detail.account.displayName}</h2>
-              <p className="write-intro">
-                {detail.account.email} · Joined {formatDate(detail.account.createdAt)}
-              </p>
+              {detail.account.avatarUrl ? (
+                <img src={detail.account.avatarUrl} alt="" className="profile-avatar profile-avatar-photo" />
+              ) : (
+                <div className="profile-avatar" aria-hidden="true">
+                  {initials(detail.account.displayName)}
+                </div>
+              )}
+              <div>
+                <h2>
+                  {detail.account.displayName}
+                  {detail.account.nickname && <span className="reader-detail-nickname"> "{detail.account.nickname}"</span>}
+                </h2>
+                <p className="write-intro">
+                  {detail.account.email} · Joined {formatDate(detail.account.createdAt)}
+                </p>
+                <p className="write-intro">
+                  {detail.account.followerCount} {detail.account.followerCount === 1 ? 'follower' : 'followers'} ·{' '}
+                  following {detail.account.followingCount}{' '}
+                  <Link to={`/reader/${accountId}`} target="_blank" rel="noreferrer">
+                    View public profile →
+                  </Link>
+                </p>
+              </div>
             </div>
 
             <div className="reader-detail-actions">
@@ -155,6 +189,11 @@ export function ReaderDetailModal({ accountId, onClose, onDeleted }) {
               <button type="button" className="btn btn-ghost" disabled={busy} onClick={() => togglePanel('warn')}>
                 Send warning
               </button>
+              {detail.account.avatarUrl && (
+                <button type="button" className="btn btn-ghost" disabled={busy} onClick={handleRemoveAvatar}>
+                  Remove avatar
+                </button>
+              )}
               <button type="button" className="btn btn-danger" disabled={busy} onClick={() => togglePanel('delete')}>
                 Delete account
               </button>

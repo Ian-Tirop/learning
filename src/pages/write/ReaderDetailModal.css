@@ -71,8 +71,21 @@
 }
 
 .reader-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
   padding-right: 40px;
   margin-bottom: 24px;
+
+  h2 {
+    font-size: 20px;
+  }
+}
+
+.reader-detail-nickname {
+  font-size: 0.6em;
+  font-weight: 500;
+  color: var(--text);
 }
 
 .reader-detail-actions {

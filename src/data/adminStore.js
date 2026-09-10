@@ -64,6 +64,11 @@ export async function deleteReaderAccount(accountId) {
   return api.post('/api/admin/reader-delete', { accountId })
 }
 
+/** Clears a reader's uploaded avatar (moderation action short of deleting the account). */
+export async function removeReaderAvatar(accountId) {
+  return api.post('/api/admin/reader-remove-avatar', { accountId })
+}
+
 export async function getAdminAvatar() {
   const data = await api.get('/api/admin/avatar')
   return data.avatarUrl

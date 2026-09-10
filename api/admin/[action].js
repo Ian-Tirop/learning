@@ -33,6 +33,8 @@ import {
   createAccountWarning,
   getAccountWarnings,
   setPasswordResetToken,
+  getFollowCounts,
+  updateAccountAvatar,
 } from '../_lib/db.js'
 import {
   sendPublishNotification,
@@ -287,12 +289,29 @@ async function handler(req, res) {
       res.status(404).json({ error: 'No account with that id.' })
       return
     }
-    const [posts, comments, warnings] = await Promise.all([
+    const [posts, comments, warnings, followCounts] = await Promise.all([
       getPostsForAccount(accountId),
       getCommentsForAccount(accountId),
       getAccountWarnings(accountId),
+      getFollowCounts(accountId),
     ])
-    res.status(200).json({ account, posts, comments, warnings })
+    res.status(200).json({ account: { ...account, ...followCounts }, posts, comments, warnings })
+    return
+  }
+
+  if (action === 'reader-remove-avatar' && req.method === 'POST') {
+    if (!requireAdmin(req, res)) return
+    const { accountId } = req.body || {}
+    if (!accountId) {
+      res.status(400).json({ error: 'An accountId is required.' })
+      return
+    }
+    const account = await updateAccountAvatar(accountId, null)
+    if (!account) {
+      res.status(404).json({ error: 'No account with that id.' })
+      return
+    }
+    res.status(200).json({ account })
     return
   }
 

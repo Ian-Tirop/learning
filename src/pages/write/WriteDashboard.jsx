@@ -97,7 +97,8 @@ function AnalyticsDetail({ activeKey, data, reportedComments, onDeleteComment, o
           {recentComments.map((comment) => (
             <li key={comment.id}>
               <div>
-                <strong>{comment.name}</strong> on{' '}
+                <strong>{comment.name}</strong>
+                {!comment.accountId && <span className="guest-badge">Guest</span>} on{' '}
                 <Link to={`/blog/${comment.postSlug}`}>{comment.postTitle}</Link>
                 <p>{comment.text}</p>
               </div>
@@ -188,7 +189,8 @@ function AnalyticsDetail({ activeKey, data, reportedComments, onDeleteComment, o
           {reportedComments.map((comment) => (
             <li key={comment.id}>
               <div>
-                <strong>{comment.name}</strong> on{' '}
+                <strong>{comment.name}</strong>
+                {!comment.accountId && <span className="guest-badge">Guest</span>} on{' '}
                 <Link to={`/blog/${comment.postSlug}`}>{comment.postTitle}</Link>
                 <span className="analytics-detail-sub">
                   {' '}
@@ -216,7 +218,7 @@ function AnalyticsDetail({ activeKey, data, reportedComments, onDeleteComment, o
 function AnalyticsBody({ data, onViewAccount }) {
   const [activeKey, setActiveKey] = useState(null)
   const [reportedComments, setReportedComments] = useState(data.reportedComments)
-  const { totals, topLiked, topCommented, topRated, trending } = data
+  const { totals, topLiked, topCommented, topRated, trending, mostFollowed } = data
   const toggleActive = (key) => setActiveKey((current) => (current === key ? null : key))
 
   const handleDeleteComment = async (id) => {
@@ -306,6 +308,21 @@ function AnalyticsBody({ data, onViewAccount }) {
               <li key={post.slug}>
                 <Link to={`/blog/${post.slug}`}>{post.title}</Link>
                 <span>{post.comments} 💬</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="analytics-column">
+          <h3>Most followed</h3>
+          {mostFollowed.length === 0 && <p className="write-intro">No follows yet.</p>}
+          <ul className="analytics-list">
+            {mostFollowed.map((writer) => (
+              <li key={writer.id}>
+                <Link to={`/reader/${writer.id}`}>{writer.displayName}</Link>
+                <span>
+                  {writer.followerCount} {writer.followerCount === 1 ? 'follower' : 'followers'}
+                </span>
               </li>
             ))}
           </ul>
@@ -438,6 +455,7 @@ export function WriteDashboard() {
   const [reviewNote, setReviewNote] = useState('')
   const [activeTab, setActiveTab] = useState('overview')
   const [viewingAccountId, setViewingAccountId] = useState(null)
+  const [postsFilter, setPostsFilter] = useState('all')
   const [avatarUrl, setAvatarUrl] = useState(null)
 
   const refresh = () => {
@@ -483,6 +501,11 @@ export function WriteDashboard() {
   }
 
   const pending = posts.filter((post) => post.status === 'pending')
+  const filteredPosts = posts.filter((post) => {
+    if (postsFilter === 'mine') return !post.submittedByName
+    if (postsFilter === 'community') return Boolean(post.submittedByName)
+    return true
+  })
 
   return (
     <section className="container write-page profile-page">
@@ -629,10 +652,26 @@ export function WriteDashboard() {
 
       {activeTab === 'posts' && (
         <div className="profile-panel">
-          <h2 className="profile-section-title">All posts ({posts.length})</h2>
+          <h2 className="profile-section-title">All posts ({filteredPosts.length})</h2>
           <p className="write-intro">Every post regardless of status — drafts, scheduled, published, rejected, and pending.</p>
+          <div className="body-tabs posts-filter-tabs">
+            {[
+              { key: 'all', label: `All (${posts.length})` },
+              { key: 'mine', label: `Mine (${posts.filter((p) => !p.submittedByName).length})` },
+              { key: 'community', label: `Community (${posts.filter((p) => p.submittedByName).length})` },
+            ].map((option) => (
+              <button
+                key={option.key}
+                type="button"
+                className={`body-tab${postsFilter === option.key ? ' active' : ''}`}
+                onClick={() => setPostsFilter(option.key)}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
           <ul className="write-list">
-            {posts.map((post) => (
+            {filteredPosts.map((post) => (
               <li key={post.slug} className="write-row">
                 <PostCover cover={post.cover} size="thumb" />
                 <div className="write-row-main">
