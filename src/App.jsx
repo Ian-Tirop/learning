@@ -16,6 +16,7 @@ import { AccountLogin } from './pages/account/AccountLogin'
 import { ForgotPassword } from './pages/account/ForgotPassword'
 import { ResetPassword } from './pages/account/ResetPassword'
 import { Profile } from './pages/account/Profile'
+import { PublicProfile } from './pages/account/PublicProfile'
 import { NotFound } from './pages/NotFound'
 import { WriteDashboard } from './pages/write/WriteDashboard'
 import { PostEditor } from './pages/write/PostEditor'
@@ -64,6 +65,7 @@ function App() {
                 <Route path="/account/forgot-password" element={<ForgotPassword />} />
                 <Route path="/account/reset-password" element={<ResetPassword />} />
                 <Route path="/profile" element={<Profile />} />
+                <Route path="/reader/:accountId" element={<PublicProfile />} />
                 <Route path="/write" element={<WriteDashboard />} />
                 <Route path="/write/new" element={<PostEditor />} />
                 <Route path="/write/:slug" element={<PostEditor />} />

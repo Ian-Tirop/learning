@@ -576,7 +576,19 @@ export async function getAuthorInfo(accountId, viewerAccountId) {
     avatarUrl: account.avatar_url || null,
     followerCount: count,
     isFollowing,
+    createdAt: account.created_at,
   }
+}
+
+// Published posts only — the public-profile counterpart to
+// getPostsForAccount, which includes every status and is only ever shown
+// to the account owner themselves (or admin).
+export async function getPublishedPostsForAccount(accountId) {
+  const rows = await sqlQuery(
+    postsWithStats("WHERE p.author_account_id = $2 AND p.status = 'published'", 'ORDER BY p.date DESC'),
+    [null, accountId],
+  )
+  return rows.map(mapPostRow)
 }
 
 // Every writer this account follows, for the profile's Following tab —

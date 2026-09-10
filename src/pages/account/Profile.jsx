@@ -52,12 +52,16 @@ function ArticleRow({ post }) {
 function WriterRow({ writer, onUnfollow }) {
   return (
     <li className="write-row">
-      <div className="profile-avatar profile-avatar-sm" aria-hidden="true">
-        {initials(writer.displayName)}
-      </div>
+      <Link to={`/reader/${writer.id}`}>
+        <div className="profile-avatar profile-avatar-sm" aria-hidden="true">
+          {initials(writer.displayName)}
+        </div>
+      </Link>
       <div className="write-row-main">
         <div className="write-row-title">
-          <h2>{writer.displayName}</h2>
+          <h2>
+            <Link to={`/reader/${writer.id}`}>{writer.displayName}</Link>
+          </h2>
         </div>
         <p className="write-row-meta">
           {writer.postCount} published {writer.postCount === 1 ? 'post' : 'posts'}

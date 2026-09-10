@@ -288,6 +288,15 @@
   font-size: 15px;
   font-weight: 600;
   color: var(--text-h);
+
+  a {
+    text-decoration: none;
+
+    &:hover {
+      color: var(--accent);
+      text-decoration: underline;
+    }
+  }
 }
 
 .author-link {

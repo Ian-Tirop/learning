@@ -21,6 +21,8 @@ import {
   toggleFollow,
   getFollowedAccounts,
   updateAccountAvatar,
+  getAuthorInfo,
+  getPublishedPostsForAccount,
 } from '../_lib/db.js'
 import {
   hashPassword,
@@ -163,6 +165,26 @@ async function handleFollowing(req, res) {
   res.status(200).json({ accounts })
 }
 
+// Public — no sign-in required to view another reader's profile. Only
+// ever exposes public-safe fields (name, avatar, follower count, their
+// published posts) — never email, and never their liked/saved lists,
+// which stay private to the account owner's own /profile.
+async function handlePublicProfile(req, res) {
+  const accountId = req.query?.accountId
+  if (!accountId) {
+    res.status(400).json({ error: 'An accountId is required.' })
+    return
+  }
+  const viewerAccountId = getReaderAccountId(req)
+  const account = await getAuthorInfo(accountId, viewerAccountId)
+  if (!account) {
+    res.status(404).json({ error: 'No reader with that id.' })
+    return
+  }
+  const posts = await getPublishedPostsForAccount(accountId)
+  res.status(200).json({ account, posts })
+}
+
 async function handleUpdateProfile(req, res) {
   const accountId = getReaderAccountId(req)
   if (!accountId) {
@@ -302,6 +324,7 @@ async function handler(req, res) {
   if (action === 'saved-posts' && req.method === 'GET') return handleSavedPosts(req, res)
   if (action === 'follow-toggle' && req.method === 'POST') return handleFollowToggle(req, res)
   if (action === 'following' && req.method === 'GET') return handleFollowing(req, res)
+  if (action === 'public-profile' && req.method === 'GET') return handlePublicProfile(req, res)
   if (action === 'update-profile' && req.method === 'POST') return handleUpdateProfile(req, res)
   if (action === 'upload-avatar' && req.method === 'POST') return handleUploadAvatar(req, res)
   if (action === 'upload-image' && req.method === 'POST') return handleUploadImage(req, res)
