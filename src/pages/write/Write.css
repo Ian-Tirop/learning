@@ -187,6 +187,13 @@
   grid-template-columns: 1fr 1fr;
   gap: 20px;
 
+  /* Grid items default to min-width: auto, so a wide input's content
+     (e.g. a long placeholder) can stop a column from shrinking and blow
+     the whole row past its container instead of wrapping. */
+  > .field {
+    min-width: 0;
+  }
+
   @media (max-width: 640px) {
     grid-template-columns: 1fr;
   }
