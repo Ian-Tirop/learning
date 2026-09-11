@@ -213,10 +213,11 @@ export async function getCommentById(id) {
 
 export async function getTopComments(limit = 3) {
   const rows = await sql`
-    SELECT c.id, c.name, c.body, c.post_slug, p.title AS post_title,
+    SELECT c.id, c.name, c.body, c.post_slug, p.title AS post_title, a.avatar_url,
       COALESCE(r.reaction_count, 0) AS reaction_count
     FROM comments c
     JOIN posts p ON p.slug = c.post_slug
+    LEFT JOIN accounts a ON a.id = c.account_id
     LEFT JOIN (
       SELECT comment_id, COUNT(*) AS reaction_count FROM comment_reactions GROUP BY comment_id
     ) r ON r.comment_id = c.id
@@ -230,6 +231,7 @@ export async function getTopComments(limit = 3) {
     text: row.body,
     postSlug: row.post_slug,
     postTitle: row.post_title,
+    avatarUrl: row.avatar_url || null,
   }))
 }
 

@@ -624,47 +624,6 @@
   padding: 48px 24px 72px;
 }
 
-.testimonial-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
-
-  @media (max-width: 900px) {
-    grid-template-columns: 1fr;
-  }
-}
-
-.testimonial-card {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 20px;
-}
-
-.testimonial-text {
-  font-family: var(--heading);
-  font-size: 17px;
-  line-height: 1.5;
-  color: var(--text-h);
-}
-
-.testimonial-attribution {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.testimonial-name {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--text-h);
-}
-
-.testimonial-source {
-  font-size: 13px;
-  color: var(--text);
-}
-
 .author-section.container {
   padding: 0 24px 72px;
 }

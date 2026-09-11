@@ -6,6 +6,7 @@ import { PostCover } from '../components/PostCover'
 import { SkeletonPostCard } from '../components/Skeleton'
 import { Newsletter } from '../components/Newsletter'
 import { Reveal } from '../components/Reveal'
+import { TestimonialCarousel } from '../components/TestimonialCarousel'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { useMetaDescription } from '../hooks/useMetaDescription'
 import { useCanonicalUrl } from '../hooks/useCanonicalUrl'
@@ -29,7 +30,7 @@ export function Home() {
 
   useEffect(() => {
     let cancelled = false
-    Promise.all([getAllPosts(), api.get('/api/comments/top?limit=3').catch(() => ({ comments: [] }))])
+    Promise.all([getAllPosts(), api.get('/api/comments/top?limit=8').catch(() => ({ comments: [] }))])
       .then(([fetchedPosts, topComments]) => {
         if (cancelled) return
         setPosts(fetchedPosts)
@@ -209,23 +210,7 @@ export default function IanTirop() {
             <h2>From the comments</h2>
           </div>
 
-          <div className="testimonial-grid">
-            {testimonials.map((comment, index) => (
-              <Reveal
-                as="div"
-                key={`${comment.postSlug}-${comment.id}`}
-                delay={index * 90}
-              >
-                <Link to={`/blog/${comment.postSlug}`} className="card testimonial-card">
-                  <p className="testimonial-text">&ldquo;{comment.text}&rdquo;</p>
-                  <p className="testimonial-attribution">
-                    <span className="testimonial-name">{comment.name}</span>
-                    <span className="testimonial-source">on {comment.postTitle}</span>
-                  </p>
-                </Link>
-              </Reveal>
-            ))}
-          </div>
+          <TestimonialCarousel testimonials={testimonials} />
         </Reveal>
       )}
 
