@@ -5,6 +5,7 @@ import { getAnalytics, deleteCommentAsAdmin, getAdminAvatar, uploadAdminAvatar }
 import { PostCover } from '../../components/PostCover'
 import { SecurityPanel } from '../admin/SecurityPanel'
 import { ReaderDetailModal } from './ReaderDetailModal'
+import { PostReviewModal } from './PostReviewModal'
 import { useDocumentTitle } from '../../hooks/useDocumentTitle'
 import { useMetaRobots } from '../../hooks/useMetaRobots'
 import { useAdmin } from '../../context/AdminContext'
@@ -48,14 +49,24 @@ const STAT_DEFS = [
   },
 ]
 
-function PostDetailList({ posts, emptyMessage }) {
+function PostDetailList({ posts, emptyMessage, onViewPost }) {
   if (posts.length === 0) return <p className="write-intro">{emptyMessage}</p>
   return (
     <ul className="analytics-list analytics-detail-list">
       {posts.map((post) => (
         <li key={post.slug}>
           <div>
-            <Link to={`/write/${post.slug}`}>{post.title}</Link>
+            {post.status === 'rejected' || post.status === 'pending' ? (
+              <button
+                type="button"
+                className="analytics-list-link-btn"
+                onClick={() => onViewPost(post.slug)}
+              >
+                {post.title}
+              </button>
+            ) : (
+              <Link to={`/write/${post.slug}`}>{post.title}</Link>
+            )}
             <span className={`status-badge ${post.status}`}>{STATUS_LABEL[post.status]}</span>
           </div>
           <span>
@@ -68,7 +79,7 @@ function PostDetailList({ posts, emptyMessage }) {
   )
 }
 
-function AnalyticsDetail({ activeKey, data, reportedComments, onDeleteComment, onViewAccount }) {
+function AnalyticsDetail({ activeKey, data, reportedComments, onDeleteComment, onViewAccount, onViewPost }) {
   if (!activeKey) return null
 
   const { posts, accounts, subscribers, feedback, recentComments } = data
@@ -79,7 +90,13 @@ function AnalyticsDetail({ activeKey, data, reportedComments, onDeleteComment, o
   if (['total', 'published', 'pending', 'rejected', 'draft'].includes(activeKey)) {
     const statusFilter = activeKey === 'total' ? null : activeKey
     title = STAT_DEFS.find((s) => s.key === activeKey).label
-    body = <PostDetailList posts={statPosts(data, statusFilter)} emptyMessage="No posts here yet." />
+    body = (
+      <PostDetailList
+        posts={statPosts(data, statusFilter)}
+        emptyMessage="No posts here yet."
+        onViewPost={onViewPost}
+      />
+    )
   } else if (activeKey === 'likes' || activeKey === 'dislikes') {
     title = activeKey === 'likes' ? 'Posts by likes' : 'Posts by dislikes'
     const sorted = [...posts].sort((a, b) => b[activeKey] - a[activeKey])
@@ -216,7 +233,7 @@ function AnalyticsDetail({ activeKey, data, reportedComments, onDeleteComment, o
   )
 }
 
-function AnalyticsBody({ data, onViewAccount }) {
+function AnalyticsBody({ data, onViewAccount, onViewPost }) {
   const [activeKey, setActiveKey] = useState(null)
   const [reportedComments, setReportedComments] = useState(data.reportedComments)
   const { totals, topLiked, topCommented, topRated, trending, mostFollowed } = data
@@ -256,6 +273,7 @@ function AnalyticsBody({ data, onViewAccount }) {
         reportedComments={reportedComments}
         onDeleteComment={handleDeleteComment}
         onViewAccount={onViewAccount}
+        onViewPost={onViewPost}
       />
 
       <div className="analytics-columns">
@@ -457,6 +475,7 @@ export function WriteDashboard() {
   const location = useLocation()
   const [activeTab, setActiveTab] = useState(location.state?.tab || 'overview')
   const [viewingAccountId, setViewingAccountId] = useState(null)
+  const [viewingPostSlug, setViewingPostSlug] = useState(null)
   const [postsFilter, setPostsFilter] = useState('all')
   const [avatarUrl, setAvatarUrl] = useState(null)
 
@@ -484,25 +503,29 @@ export function WriteDashboard() {
   const handleDelete = async (slug) => {
     await deletePost(slug)
     setConfirmingSlug(null)
+    setViewingPostSlug(null)
     refresh()
     showToast('Post deleted')
   }
 
   const handleApprove = async (slug) => {
     await updatePost(slug, { status: 'published' })
+    setViewingPostSlug(null)
     refresh()
     showToast('Published! 🎉', { type: 'success' })
   }
 
-  const handleReject = async (slug) => {
-    await updatePost(slug, { status: 'rejected', reviewNote: reviewNote.trim() || undefined })
+  const handleReject = async (slug, note) => {
+    await updatePost(slug, { status: 'rejected', reviewNote: (note ?? '').trim() || undefined })
     setReviewNoteFor(null)
     setReviewNote('')
+    setViewingPostSlug(null)
     refresh()
     showToast('Submission rejected')
   }
 
   const pending = posts.filter((post) => post.status === 'pending')
+  const postInView = viewingPostSlug ? posts.find((post) => post.slug === viewingPostSlug) : null
   const filteredPosts = posts.filter((post) => {
     if (postsFilter === 'mine') return !post.submittedByName
     if (postsFilter === 'community') return Boolean(post.submittedByName)
@@ -621,7 +644,7 @@ export function WriteDashboard() {
                       <button
                         type="button"
                         className="comment-action-btn danger"
-                        onClick={() => handleReject(post.slug)}
+                        onClick={() => handleReject(post.slug, reviewNote)}
                       >
                         Confirm reject
                       </button>
@@ -691,6 +714,15 @@ export function WriteDashboard() {
                   </p>
                 </div>
                 <div className="write-row-actions">
+                  {(post.status === 'rejected' || post.status === 'pending') && (
+                    <button
+                      type="button"
+                      className="comment-action-btn"
+                      onClick={() => setViewingPostSlug(post.slug)}
+                    >
+                      View
+                    </button>
+                  )}
                   <Link to={getPostPath(post)} state={{ adminTab: 'posts' }} className="comment-action-btn">
                     Preview
                   </Link>
@@ -734,7 +766,13 @@ export function WriteDashboard() {
         <div className="profile-panel">
           <h2 className="profile-section-title">Analytics</h2>
           {!analytics && <p className="loading-note">Loading analytics…</p>}
-          {analytics && <AnalyticsBody data={analytics} onViewAccount={setViewingAccountId} />}
+          {analytics && (
+            <AnalyticsBody
+              data={analytics}
+              onViewAccount={setViewingAccountId}
+              onViewPost={setViewingPostSlug}
+            />
+          )}
         </div>
       )}
 
@@ -751,6 +789,17 @@ export function WriteDashboard() {
           accountId={viewingAccountId}
           onClose={() => setViewingAccountId(null)}
           onDeleted={() => refresh()}
+        />
+      )}
+
+      {viewingPostSlug && postInView && (
+        <PostReviewModal
+          post={postInView}
+          onClose={() => setViewingPostSlug(null)}
+          onApprove={handleApprove}
+          onReject={handleReject}
+          onDelete={handleDelete}
+          onViewAccount={setViewingAccountId}
         />
       )}
     </section>
