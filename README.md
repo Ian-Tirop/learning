@@ -209,6 +209,8 @@ api/
     email.js                Resend-backed email sends; no-ops gracefully if unconfigured
     http.js                 withErrorHandling() — any route's unexpected throw becomes a clean
                             JSON 500 instead of Vercel's generic crash page
+    upload.js                uploadImageFromDataUrl(): shared avatar/cover/inline-image upload
+                            to Vercel Blob, used by both the admin and accounts dispatch files
   admin/[action].js         Admin login/logout/session, two-factor setup+verify+disable,
                             recovery email, analytics, and the daily cron-publish-scheduled job —
                             one dispatch file, kept under the 12-function cap (see Deploying)
@@ -255,6 +257,7 @@ src/
     useMetaDescription.js   Updates <meta name="description"> per route
     useCanonicalUrl.js      Updates <link rel="canonical"> per route
     useMetaRobots.js        Sets/clears <meta name="robots">, used to noindex /write, /admin, and drafts
+    useScrollReveal.js      Powers Reveal's fade/slide-into-view; skipped under prefers-reduced-motion
   lib/
     apiClient.js             Small fetch wrapper used by every API call
     visitorId.js              A random per-browser id, so an anonymous visitor can recognize
@@ -262,32 +265,46 @@ src/
     mySubmissions.js          Tracks a reader's own pending post submissions by private edit token
     postBody.js             Markdown-ish text <-> content-block array, for the editor
     postRanking.js           getMostLiked / getRelatedPosts / getRecommendedPosts
+    postUrl.js               getPostPath: routes a post to /blog or /community depending on
+                              whether it's admin-authored or reader-submitted
     headings.js              Extracts {text, id} headings from a post's content blocks
     searchPosts.js           Shared title/excerpt/tag/body search, used by NavSearch and the Blog page
     tagCounts.js              Tallies posts per tag, for the Topics page
     isRecent.js              Date-based check backing the "New" badge
+    initials.js              Avatar initials from a display name, for the reader profile header
+    fileToDataUrl.js          Reads an uploaded File/Blob into a base64 data URL for image uploads
     slugify.js, estimateReadingTime.js, formatDate.js, formatRelativeDate.js
-  components/              Nav, NavSearch, Footer, PostCover, PostEngagement, CommentSection,
-                            ContentBlocks (incl. syntax highlighting), ReadingProgress, ListenButton,
-                            SuggestEdit, Poll, Quiz, ReaderFeedback, Newsletter, ChatWidget,
-                            ThemeToggle, Skeleton
-  pages/                    Home, Blog, BlogPost, Topics, About, Contact, Submit, NotFound
+  components/              Nav, NavSearch, Footer, PostCover, PostList (shared searchable,
+                            tag-filterable grid behind Blog + Community), PostEngagement,
+                            CommentSection, ContentBlocks (incl. syntax highlighting),
+                            TableOfContents, ReadingProgress, ListenButton, SuggestEdit, Poll,
+                            Quiz, ReaderFeedback, Newsletter, ChatWidget, ThemeToggle, Skeleton,
+                            Reveal (scroll-into-view fade/slide), ScrollToTop (resets scroll
+                            position on route change)
+  pages/                    Home, Blog, BlogPost, Topics, Community, About, Contact, Submit, NotFound
   pages/account/            AccountSignup, AccountLogin, ForgotPassword, ResetPassword,
-                            Profile (tabbed reader dashboard)
+                            Profile (tabbed reader dashboard), PublicProfile (another reader's
+                            posts + follow button, at /profile/:id or similar)
   pages/admin/              Login, Security (thin wrapper), SecurityPanel (2FA + recovery email,
                             shared with the admin dashboard's Security tab)
-  pages/write/              WriteDashboard (tabbed admin dashboard), PostEditor (create/edit)
+  pages/write/              WriteDashboard (tabbed admin dashboard), PostEditor (create/edit),
+                            PostReviewModal (pending/rejected submission detail, opened from
+                            Analytics/All posts instead of dropping into the editor),
+                            ReaderDetailModal (admin actions on a reader account: force password
+                            reset, contact, warn, remove avatar, delete)
 ```
 
 ## Backend & data model
 
-Postgres (via Neon's serverless driver, `@neondatabase/serverless`), ten
+Postgres (via Neon's serverless driver, `@neondatabase/serverless`), twelve
 tables (`db/schema.sql`):
 
 - **`accounts`** — reader accounts: email, hashed password, display name,
-  password-reset token/expiry. Entirely separate from the single admin
-  login — this is a real accounts table because there can be many readers,
-  unlike the one admin.
+  password-reset token/expiry, and optional `avatar_url`/`nickname` (both
+  purely cosmetic — comments/posts/bylines always attribute to
+  `display_name`). Entirely separate from the single admin login — this is
+  a real accounts table because there can be many readers, unlike the one
+  admin.
 - **`posts`** — every post, any status. `status` is one of `draft`,
   `pending`, `published`, `rejected`, `scheduled`. Carries an optional
   `author_account_id` (if written by a logged-in reader),
@@ -317,6 +334,13 @@ tables (`db/schema.sql`):
 - **`feedback`** — reader feedback from the Contact page's "what are you
   into" form and every post's "Suggest an edit" form (`post_slug`/
   `post_title` are set only for the latter).
+- **`follows`** — `(follower_id, writer_id)`, one row per reader following
+  another reader's `PublicProfile`. Purely a reader-to-reader graph, no
+  admin involvement.
+- **`account_warnings`** — a persistent moderation trail of admin-issued
+  warnings against a reader account (`ReaderDetailModal`), separate from
+  ordinary reader-submitted `comment_reports`; each warning is also emailed
+  to the account when issued.
 
 **No visitor accounts required for engagement.** Every browser gets a
 random id (`src/lib/visitorId.js`, in `localStorage`) purely so it can
@@ -632,8 +656,6 @@ anymore — all three write to real, shared tables (`feedback`,
   feedback, newsletter/reader-feedback/submission success and error
   messages) use `aria-live`/`role="status"`/`role="alert"` so screen reader
   users get notified without needing to find the change visually.
-- A `.sr-only` utility class in `App.css` is available for visually-hidden,
-  screen-reader-only text.
 - The light/dark theme crossfade and every entrance animation respect
   `prefers-reduced-motion`, falling back to an instant swap/static layout.
 
@@ -679,6 +701,8 @@ Vercel KV) before relying on it unattended.
 - [Vite](https://vite.dev) for dev/build tooling
 - [Vercel](https://vercel.com) serverless functions (Node runtime) for the API
 - [Neon](https://neon.tech) Postgres via `@neondatabase/serverless`, provisioned through Vercel
+- [Vercel Blob](https://vercel.com/docs/storage/vercel-blob) for uploaded images (avatars, post
+  covers, inline post-body images)
 - [Anthropic](https://www.anthropic.com) Claude for the chat widget
 - [Resend](https://resend.com) for newsletter + transactional email
 - [highlight.js](https://highlightjs.org) for code-block syntax highlighting
