@@ -1,32 +1,23 @@
 import { Link } from 'react-router-dom'
-import reactLogo from '../assets/react.svg'
-import viteLogo from '../assets/vite.svg'
 import { social } from '../data/social'
 import { useAdmin } from '../context/AdminContext'
 import './Footer.css'
 
-const siteLinks = [
-  { to: '/', label: 'Home' },
+// Trimmed to what's actually worth a second click from the footer — the
+// main nav already covers Home/Write, so this stays a short reference
+// list rather than a full sitemap. Legal links live in the bottom bar
+// instead of their own column; see Terms/Privacy below.
+const exploreLinks = [
   { to: '/blog', label: 'Blog' },
   { to: '/community', label: 'Community' },
   { to: '/topics', label: 'Topics' },
-  { to: '/submit', label: 'Write' },
   { to: '/about', label: 'About' },
   { to: '/contact', label: 'Contact' },
-]
-
-const resourceLinks = [
-  { href: '/rss.xml', label: 'RSS feed' },
-  { href: '/sitemap.xml', label: 'Sitemap' },
 ]
 
 export function Footer() {
   const { isAdmin } = useAdmin()
   const year = new Date().getFullYear()
-
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
 
   return (
     <footer className="site-footer">
@@ -53,30 +44,16 @@ export function Footer() {
           </ul>
         </div>
 
-        <nav className="footer-col" aria-label="Site">
-          <p className="footer-col-title">Site</p>
+        <nav className="footer-col" aria-label="Explore">
+          <p className="footer-col-title">Explore</p>
           <ul>
-            {siteLinks.map((link) => (
+            {exploreLinks.map((link) => (
               <li key={link.to}>
                 <Link to={link.to}>{link.label}</Link>
               </li>
             ))}
-          </ul>
-        </nav>
-
-        <nav className="footer-col" aria-label="Resources">
-          <p className="footer-col-title">Resources</p>
-          <ul>
-            {resourceLinks.map((link) => (
-              <li key={link.href}>
-                <a href={link.href}>{link.label}</a>
-              </li>
-            ))}
             <li>
-              <Link to="/terms">Terms of Service</Link>
-            </li>
-            <li>
-              <Link to="/privacy">Privacy Policy</Link>
+              <a href="/rss.xml">RSS feed</a>
             </li>
           </ul>
         </nav>
@@ -84,27 +61,14 @@ export function Footer() {
 
       <div className="site-footer-bottom">
         <p className="signature">
-          © {year} · Built with ⚡ by <strong>Ian Tirop</strong>
+          © {year} · <strong>Ian Tirop</strong>. All rights reserved.
         </p>
 
-        <p className="stack-credit">
-          <img src={viteLogo} alt="" />
-          <img src={reactLogo} alt="" />
-          Vite + React
-        </p>
-
-        <button type="button" className="back-to-top" onClick={scrollToTop}>
-          Back to top
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#arrow-icon"></use>
-          </svg>
-        </button>
-
-        {!isAdmin && (
-          <Link to="/admin/login" className="admin-entry">
-            Admin
-          </Link>
-        )}
+        <nav className="footer-legal" aria-label="Legal">
+          <Link to="/terms">Terms of Service</Link>
+          <Link to="/privacy">Privacy Policy</Link>
+          {!isAdmin && <Link to="/admin/login">Admin</Link>}
+        </nav>
       </div>
     </footer>
   )
