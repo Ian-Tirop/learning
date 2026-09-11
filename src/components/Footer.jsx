@@ -5,14 +5,19 @@ import './Footer.css'
 
 // Trimmed to what's actually worth a second click from the footer — the
 // main nav already covers Home/Write, so this stays a short reference
-// list rather than a full sitemap. Legal links live in the bottom bar
-// instead of their own column; see Terms/Privacy below.
+// list rather than a full sitemap, split into two even groups instead of
+// one long column. Legal links live in the bottom bar instead of their
+// own column; see Terms/Privacy below.
 const exploreLinks = [
   { to: '/blog', label: 'Blog' },
   { to: '/community', label: 'Community' },
   { to: '/topics', label: 'Topics' },
+]
+
+const connectLinks = [
   { to: '/about', label: 'About' },
   { to: '/contact', label: 'Contact' },
+  { href: '/rss.xml', label: 'RSS feed' },
 ]
 
 export function Footer() {
@@ -52,9 +57,17 @@ export function Footer() {
                 <Link to={link.to}>{link.label}</Link>
               </li>
             ))}
-            <li>
-              <a href="/rss.xml">RSS feed</a>
-            </li>
+          </ul>
+        </nav>
+
+        <nav className="footer-col" aria-label="Connect">
+          <p className="footer-col-title">Connect</p>
+          <ul>
+            {connectLinks.map((link) => (
+              <li key={link.to || link.href}>
+                {link.to ? <Link to={link.to}>{link.label}</Link> : <a href={link.href}>{link.label}</a>}
+              </li>
+            ))}
           </ul>
         </nav>
       </div>

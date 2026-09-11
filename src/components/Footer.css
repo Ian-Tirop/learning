@@ -1,14 +1,24 @@
 .site-footer {
-  border-top: 1px solid var(--border);
+  position: relative;
   margin-top: auto;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border) 15%, var(--border) 85%, transparent);
+  }
 }
 
 .site-footer-main {
   max-width: 1080px;
   margin: 0 auto;
-  padding: 56px 24px 36px;
+  padding: 60px 24px 36px;
   display: grid;
-  grid-template-columns: 1.6fr 1fr;
+  grid-template-columns: 1.5fr 0.8fr 0.8fr;
   gap: 32px;
 }
 
@@ -31,6 +41,11 @@
     font-size: 12px;
     letter-spacing: 0.5px;
     background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    transition: transform 0.3s var(--ease);
+  }
+
+  &:hover .brand-mark {
+    transform: rotate(-6deg) scale(1.06);
   }
 }
 
@@ -43,12 +58,23 @@
 }
 
 .footer-col-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-h);
-  margin: 0 0 14px;
+  margin: 0 0 16px;
+
+  &::before {
+    content: '';
+    width: 12px;
+    height: 2px;
+    border-radius: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  }
 }
 
 .footer-col ul {
@@ -57,17 +83,25 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
 .footer-col a {
+  display: inline-block;
   font-size: 14px;
   color: var(--text);
   text-decoration: none;
-  transition: color 0.2s var(--ease);
+  transition: color 0.2s var(--ease), transform 0.2s var(--ease);
 
   &:hover {
     color: var(--accent);
+    transform: translateX(3px);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+    border-radius: 2px;
   }
 }
 
@@ -153,6 +187,20 @@
       outline-offset: 2px;
       opacity: 1;
     }
+  }
+}
+
+@media (max-width: 860px) {
+  .site-footer-main {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .footer-brand {
+    grid-column: 1 / -1;
+  }
+
+  .footer-tagline {
+    max-width: 420px;
   }
 }
 
