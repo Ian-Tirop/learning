@@ -196,6 +196,14 @@ async function handleUpdateProfile(req, res) {
   const displayName = typeof body.displayName === 'string' ? body.displayName.trim() : ''
   const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : ''
   const nickname = typeof body.nickname === 'string' ? body.nickname.trim() : ''
+  const bio = typeof body.bio === 'string' ? body.bio.trim() : ''
+  const website = typeof body.website === 'string' ? body.website.trim() : ''
+  const country = typeof body.country === 'string' ? body.country.trim() : ''
+  const socialLinks = {}
+  for (const platform of ['github', 'x', 'linkedin']) {
+    const value = body.socialLinks?.[platform]
+    if (typeof value === 'string' && value.trim()) socialLinks[platform] = value.trim()
+  }
 
   if (!displayName) {
     res.status(400).json({ error: 'Your name is required.' })
@@ -212,7 +220,15 @@ async function handleUpdateProfile(req, res) {
     return
   }
 
-  const account = await updateAccountProfile(accountId, { displayName, email, nickname })
+  const account = await updateAccountProfile(accountId, {
+    displayName,
+    email,
+    nickname,
+    bio,
+    website,
+    socialLinks,
+    country,
+  })
   res.status(200).json({ account })
 }
 

@@ -21,6 +21,54 @@
   }
 }
 
+.profile-about {
+  margin: -8px 0 28px;
+  max-width: 640px;
+}
+
+.profile-bio {
+  color: var(--text);
+  line-height: 1.6;
+  margin-bottom: 14px;
+}
+
+.profile-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.profile-link-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--code-bg);
+  color: var(--text-h);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: border-color 0.2s var(--ease), transform 0.2s var(--ease);
+
+  .icon {
+    width: 15px;
+    height: 15px;
+  }
+
+  .invertable {
+    :root[data-theme='dark'] & {
+      filter: invert(1) brightness(2);
+    }
+  }
+
+  &:hover {
+    border-color: var(--accent-border);
+    transform: translateY(-1px);
+  }
+}
+
 .login-switch {
   margin-top: 20px;
   font-size: 14px;

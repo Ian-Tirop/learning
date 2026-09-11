@@ -461,6 +461,10 @@ function mapAccountRow(row) {
     displayName: row.display_name,
     avatarUrl: row.avatar_url || null,
     nickname: row.nickname || null,
+    bio: row.bio || '',
+    website: row.website || '',
+    socialLinks: row.social_links || {},
+    country: row.country || '',
     createdAt: row.created_at,
   }
 }
@@ -499,9 +503,19 @@ export async function getAccountByIdForAuth(id) {
   return rows[0] || null
 }
 
-export async function updateAccountProfile(id, { displayName, email, nickname }) {
+export async function updateAccountProfile(
+  id,
+  { displayName, email, nickname, bio, website, socialLinks, country },
+) {
   const rows = await sql`
-    UPDATE accounts SET display_name = ${displayName}, email = ${email}, nickname = ${nickname || null}
+    UPDATE accounts SET
+      display_name = ${displayName},
+      email = ${email},
+      nickname = ${nickname || null},
+      bio = ${bio || null},
+      website = ${website || null},
+      social_links = ${JSON.stringify(socialLinks || {})}::jsonb,
+      country = ${country || null}
     WHERE id = ${id}
     RETURNING *
   `
@@ -568,7 +582,8 @@ export async function toggleFollow(followerId, writerId) {
 // isFollowing is always false rather than hitting the follows table.
 export async function getAuthorInfo(accountId, viewerAccountId) {
   const rows = await sql`
-    SELECT id, display_name, avatar_url, created_at FROM accounts WHERE id = ${accountId} LIMIT 1
+    SELECT id, display_name, avatar_url, bio, website, social_links, created_at
+    FROM accounts WHERE id = ${accountId} LIMIT 1
   `
   const account = rows[0]
   if (!account) return null
@@ -586,6 +601,9 @@ export async function getAuthorInfo(accountId, viewerAccountId) {
     id: account.id,
     displayName: account.display_name,
     avatarUrl: account.avatar_url || null,
+    bio: account.bio || '',
+    website: account.website || '',
+    socialLinks: account.social_links || {},
     followerCount: count,
     isFollowing,
     createdAt: account.created_at,

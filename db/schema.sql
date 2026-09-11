@@ -198,3 +198,11 @@ CREATE INDEX IF NOT EXISTS account_warnings_account_id_idx ON account_warnings(a
 -- existing attribution call sites.
 ALTER TABLE accounts ADD COLUMN IF NOT EXISTS avatar_url text;
 ALTER TABLE accounts ADD COLUMN IF NOT EXISTS nickname text;
+
+-- Optional public-profile fields, shown on both the reader's own settings
+-- page and their PublicProfile (/reader/:id) — except country, which is
+-- kept private (settings-only), same treatment as email.
+ALTER TABLE accounts ADD COLUMN IF NOT EXISTS bio text;
+ALTER TABLE accounts ADD COLUMN IF NOT EXISTS website text;
+ALTER TABLE accounts ADD COLUMN IF NOT EXISTS social_links jsonb;
+ALTER TABLE accounts ADD COLUMN IF NOT EXISTS country text;

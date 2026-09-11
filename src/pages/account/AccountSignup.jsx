@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { useAccount } from '../../context/AccountContext'
 import { PasswordField } from '../../components/PasswordField'
@@ -21,8 +21,12 @@ export function AccountSignup() {
   const [agreedToTerms, setAgreedToTerms] = useState(false)
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  // Signing up updates `account` from context, which would otherwise race
+  // this component's own post-signup navigate() below against the redirect
+  // guard meant for someone who visits this page already logged in.
+  const justSignedUpRef = useRef(false)
 
-  if (!loading && account) {
+  if (!loading && account && !justSignedUpRef.current) {
     return <Navigate to="/profile" replace />
   }
 
@@ -46,7 +50,8 @@ export function AccountSignup() {
     setSubmitting(true)
     try {
       await signup({ displayName, email, password })
-      navigate('/profile')
+      justSignedUpRef.current = true
+      navigate('/profile?tab=settings')
     } catch (err) {
       setError(err.message || 'Could not create your account.')
     } finally {

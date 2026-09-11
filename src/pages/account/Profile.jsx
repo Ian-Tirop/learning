@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, Navigate } from 'react-router-dom'
+import { Link, Navigate, useSearchParams } from 'react-router-dom'
 import { getMyPosts, getLikedPosts, getSavedPosts, getFollowing, toggleFollow } from '../../data/accountStore'
 import { getAllPosts } from '../../data/postStore'
 import { getRecommendedPosts } from '../../lib/postRanking'
@@ -13,6 +13,7 @@ import { useCountUp } from '../../hooks/useCountUp'
 import { formatDate } from '../../lib/formatDate'
 import { initials } from '../../lib/initials'
 import { getPostPath } from '../../lib/postUrl'
+import { countries } from '../../data/countries'
 import '../write/Write.css'
 import './Account.css'
 
@@ -82,9 +83,23 @@ function ProfileDetailsForm({ account, updateProfile }) {
   const [displayName, setDisplayName] = useState(account.displayName)
   const [email, setEmail] = useState(account.email)
   const [nickname, setNickname] = useState(account.nickname || '')
+  const [bio, setBio] = useState(account.bio || '')
+  const [website, setWebsite] = useState(account.website || '')
+  const [github, setGithub] = useState(account.socialLinks?.github || '')
+  const [x, setX] = useState(account.socialLinks?.x || '')
+  const [linkedin, setLinkedin] = useState(account.socialLinks?.linkedin || '')
+  const [country, setCountry] = useState(account.country || '')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
+
+  // Clears the "saved" confirmation as soon as anything changes again —
+  // every field's onChange routes through this instead of repeating
+  // `setSuccess(false)` inline at each call site.
+  const withReset = (setter) => (event) => {
+    setter(event.target.value)
+    setSuccess(false)
+  }
 
   const handleSubmit = async (event) => {
     event.preventDefault()
@@ -92,7 +107,15 @@ function ProfileDetailsForm({ account, updateProfile }) {
     setError('')
     setSuccess(false)
     try {
-      await updateProfile({ displayName, email, nickname })
+      await updateProfile({
+        displayName,
+        email,
+        nickname,
+        bio,
+        website,
+        socialLinks: { github, x, linkedin },
+        country,
+      })
       setSuccess(true)
     } catch (err) {
       setError(err.message || 'Could not update your profile.')
@@ -108,25 +131,11 @@ function ProfileDetailsForm({ account, updateProfile }) {
       <div className="field-row">
         <label className="field">
           <span>Name</span>
-          <input
-            type="text"
-            value={displayName}
-            onChange={(event) => {
-              setDisplayName(event.target.value)
-              setSuccess(false)
-            }}
-          />
+          <input type="text" value={displayName} onChange={withReset(setDisplayName)} />
         </label>
         <label className="field">
           <span>Email</span>
-          <input
-            type="email"
-            value={email}
-            onChange={(event) => {
-              setEmail(event.target.value)
-              setSuccess(false)
-            }}
-          />
+          <input type="email" value={email} onChange={withReset(setEmail)} />
         </label>
       </div>
       <label className="field">
@@ -135,12 +144,68 @@ function ProfileDetailsForm({ account, updateProfile }) {
           type="text"
           value={nickname}
           placeholder="Shown on your own profile only"
-          onChange={(event) => {
-            setNickname(event.target.value)
-            setSuccess(false)
-          }}
+          onChange={withReset(setNickname)}
         />
       </label>
+
+      <label className="field">
+        <span>Bio</span>
+        <textarea
+          value={bio}
+          onChange={withReset(setBio)}
+          placeholder="A couple of sentences about you — shown on your public profile"
+          maxLength={280}
+          rows={3}
+        />
+      </label>
+
+      <label className="field">
+        <span>Website (optional)</span>
+        <input
+          type="url"
+          value={website}
+          onChange={withReset(setWebsite)}
+          placeholder="https://your-site.com"
+        />
+      </label>
+
+      <div className="field-row field-row-3">
+        <label className="field">
+          <span>GitHub (optional)</span>
+          <input
+            type="url"
+            value={github}
+            onChange={withReset(setGithub)}
+            placeholder="https://github.com/you"
+          />
+        </label>
+        <label className="field">
+          <span>X / Twitter (optional)</span>
+          <input type="url" value={x} onChange={withReset(setX)} placeholder="https://x.com/you" />
+        </label>
+        <label className="field">
+          <span>LinkedIn (optional)</span>
+          <input
+            type="url"
+            value={linkedin}
+            onChange={withReset(setLinkedin)}
+            placeholder="https://linkedin.com/in/you"
+          />
+        </label>
+      </div>
+
+      <label className="field">
+        <span>Country/Region (optional)</span>
+        <select value={country} onChange={withReset(setCountry)}>
+          <option value="">Prefer not to say</option>
+          {countries.map((name) => (
+            <option key={name} value={name}>
+              {name}
+            </option>
+          ))}
+        </select>
+      </label>
+
       {error && (
         <p className="comment-error" role="alert">
           {error}
@@ -281,6 +346,7 @@ export function Profile() {
   useMetaRobots()
   const { account, loading: authLoading, logout, updateProfile, changePassword, uploadAvatar } = useAccount()
   const showToast = useToast()
+  const [searchParams] = useSearchParams()
 
   const [posts, setPosts] = useState([])
   const [liked, setLiked] = useState([])
@@ -288,7 +354,9 @@ export function Profile() {
   const [following, setFollowing] = useState([])
   const [recommended, setRecommended] = useState([])
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState('overview')
+  const [activeTab, setActiveTab] = useState(
+    TABS.some((tab) => tab.key === searchParams.get('tab')) ? searchParams.get('tab') : 'overview',
+  )
 
   const handleUnfollow = async (writerId) => {
     const writer = following.find((w) => w.id === writerId)

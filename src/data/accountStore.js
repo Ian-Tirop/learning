@@ -57,8 +57,16 @@ export async function getPublicProfile(accountId) {
   return api.get(`/api/accounts/public-profile?accountId=${encodeURIComponent(accountId)}`)
 }
 
-export async function updateProfile({ displayName, email, nickname }) {
-  const data = await api.post('/api/accounts/update-profile', { displayName, email, nickname })
+export async function updateProfile({ displayName, email, nickname, bio, website, socialLinks, country }) {
+  const data = await api.post('/api/accounts/update-profile', {
+    displayName,
+    email,
+    nickname,
+    bio,
+    website,
+    socialLinks,
+    country,
+  })
   return data.account
 }
 

@@ -122,6 +122,64 @@ export function PublicProfile() {
         </div>
       </div>
 
+      {(profile.bio || profile.website || Object.keys(profile.socialLinks || {}).length > 0) && (
+        <div className="profile-about">
+          {profile.bio && <p className="profile-bio">{profile.bio}</p>}
+          <div className="profile-links">
+            {profile.website && (
+              <a href={profile.website} target="_blank" rel="noreferrer" className="profile-link-chip">
+                <svg className="icon" role="presentation" aria-hidden="true">
+                  <use href="/icons.svg#link-icon"></use>
+                </svg>
+                Website
+              </a>
+            )}
+            {profile.socialLinks?.github && (
+              <a
+                href={profile.socialLinks.github}
+                target="_blank"
+                rel="noreferrer"
+                className="profile-link-chip"
+                aria-label="GitHub"
+              >
+                <svg className="icon invertable" role="presentation" aria-hidden="true">
+                  <use href="/icons.svg#github-icon"></use>
+                </svg>
+                GitHub
+              </a>
+            )}
+            {profile.socialLinks?.x && (
+              <a
+                href={profile.socialLinks.x}
+                target="_blank"
+                rel="noreferrer"
+                className="profile-link-chip"
+                aria-label="X / Twitter"
+              >
+                <svg className="icon invertable" role="presentation" aria-hidden="true">
+                  <use href="/icons.svg#x-icon"></use>
+                </svg>
+                X
+              </a>
+            )}
+            {profile.socialLinks?.linkedin && (
+              <a
+                href={profile.socialLinks.linkedin}
+                target="_blank"
+                rel="noreferrer"
+                className="profile-link-chip"
+                aria-label="LinkedIn"
+              >
+                <svg className="icon invertable" role="presentation" aria-hidden="true">
+                  <use href="/icons.svg#linkedin-icon"></use>
+                </svg>
+                LinkedIn
+              </a>
+            )}
+          </div>
+        </div>
+      )}
+
       <h2 className="profile-section-title">Published posts ({posts.length})</h2>
       <PostList
         posts={posts}

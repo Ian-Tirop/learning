@@ -159,7 +159,8 @@
   }
 
   input,
-  textarea {
+  textarea,
+  select {
     font: inherit;
     font-size: 15px;
     padding: 10px 14px;
@@ -187,6 +188,14 @@
   gap: 20px;
 
   @media (max-width: 640px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.field-row-3 {
+  grid-template-columns: 1fr 1fr 1fr;
+
+  @media (max-width: 900px) {
     grid-template-columns: 1fr;
   }
 }
