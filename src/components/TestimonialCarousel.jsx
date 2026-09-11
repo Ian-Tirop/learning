@@ -9,7 +9,9 @@ const END_EPSILON_PX = 4
 
 export function TestimonialCarousel({ testimonials }) {
   const trackRef = useRef(null)
-  const [activeIndex, setActiveIndex] = useState(0)
+  const [activePage, setActivePage] = useState(0)
+  const [pageCount, setPageCount] = useState(1)
+  const [canScroll, setCanScroll] = useState(false)
   const [paused, setPaused] = useState(false)
   const count = testimonials.length
 
@@ -23,14 +25,32 @@ export function TestimonialCarousel({ testimonials }) {
     return card.getBoundingClientRect().width + parseFloat(getComputedStyle(track).columnGap || 0)
   }, [])
 
-  const scrollToIndex = useCallback(
+  // How many distinct scroll positions actually exist depends on how many
+  // cards fit per view — fewer than one-per-testimonial once more than one
+  // card is visible at a time, so dots represent reachable positions
+  // ("pages"), not individual testimonials.
+  useEffect(() => {
+    const track = trackRef.current
+    if (!track) return undefined
+    const updateLayout = () => {
+      const step = getStep()
+      const visible = step > 0 ? Math.max(1, Math.round(track.clientWidth / step)) : 1
+      setPageCount(Math.max(1, count - visible + 1))
+      setCanScroll(track.scrollWidth > track.clientWidth + 1)
+    }
+    updateLayout()
+    window.addEventListener('resize', updateLayout)
+    return () => window.removeEventListener('resize', updateLayout)
+  }, [count, getStep])
+
+  const scrollToPage = useCallback(
     (i) => {
       const track = trackRef.current
       if (!track) return
-      const clamped = ((i % count) + count) % count
+      const clamped = Math.max(0, Math.min(i, pageCount - 1))
       track.scrollTo({ left: clamped * getStep(), behavior: 'smooth' })
     },
-    [count, getStep],
+    [pageCount, getStep],
   )
 
   const next = useCallback(() => {
@@ -54,11 +74,11 @@ export function TestimonialCarousel({ testimonials }) {
   // Auto-advances unless the visitor is actively engaging with the
   // carousel (hover/focus/mid-swipe) or asked the OS for reduced motion.
   useEffect(() => {
-    if (paused || count <= 1) return undefined
+    if (paused || !canScroll) return undefined
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined
     const timer = setInterval(next, AUTOPLAY_MS)
     return () => clearInterval(timer)
-  }, [paused, count, next])
+  }, [paused, canScroll, next])
 
   // Keeps the active dot in sync with wherever the track actually is —
   // including a manual drag/swipe, not just button clicks.
@@ -71,7 +91,9 @@ export function TestimonialCarousel({ testimonials }) {
       frame = requestAnimationFrame(() => {
         frame = null
         const step = getStep()
-        if (step > 0) setActiveIndex(Math.round(track.scrollLeft / step) % count)
+        if (step > 0) {
+          setActivePage(Math.max(0, Math.min(Math.round(track.scrollLeft / step), pageCount - 1)))
+        }
       })
     }
     track.addEventListener('scroll', handleScroll, { passive: true })
@@ -79,7 +101,7 @@ export function TestimonialCarousel({ testimonials }) {
       track.removeEventListener('scroll', handleScroll)
       if (frame) cancelAnimationFrame(frame)
     }
-  }, [count, getStep])
+  }, [pageCount, getStep])
 
   const handleKeyDown = (event) => {
     if (event.key === 'ArrowLeft') prev()
@@ -122,7 +144,7 @@ export function TestimonialCarousel({ testimonials }) {
         ))}
       </div>
 
-      {count > 1 && (
+      {canScroll && (
         <div className="testimonial-carousel-controls">
           <button
             type="button"
@@ -136,14 +158,14 @@ export function TestimonialCarousel({ testimonials }) {
           </button>
 
           <div className="testimonial-carousel-dots">
-            {testimonials.map((t, i) => (
+            {Array.from({ length: pageCount }).map((_, i) => (
               <button
-                key={t.id}
+                key={i}
                 type="button"
-                className={`testimonial-carousel-dot${i === activeIndex ? ' active' : ''}`}
-                aria-label={`Go to testimonial ${i + 1}`}
-                aria-current={i === activeIndex}
-                onClick={() => scrollToIndex(i)}
+                className={`testimonial-carousel-dot${i === activePage ? ' active' : ''}`}
+                aria-label={`Go to slide ${i + 1}`}
+                aria-current={i === activePage}
+                onClick={() => scrollToPage(i)}
               />
             ))}
           </div>

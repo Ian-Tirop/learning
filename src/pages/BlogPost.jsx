@@ -53,10 +53,24 @@ function BlogPostView({ slug }) {
   useEffect(() => {
     let cancelled = false
     window.scrollTo(0, 0)
-    setPost(null)
     setNotFound(false)
 
-    setFollowState(null)
+    // The /blog <-> /community redirect below hands off the post it already
+    // fetched via location.state, so the destination renders instantly
+    // instead of flashing "Loading post…" for data we just had a moment
+    // ago — this only skips the *initial* render, getPostBySlug still runs
+    // to keep the rest of the page (engagement, follow state) current.
+    const preloaded = location.state?.preloadedPost
+    const alreadyHavePost = preloaded?.slug === slug
+    if (alreadyHavePost) {
+      setPost(preloaded)
+      if (preloaded.author) {
+        setFollowState({ following: preloaded.author.isFollowing, followerCount: preloaded.author.followerCount })
+      }
+    } else {
+      setPost(null)
+      setFollowState(null)
+    }
 
     getPostBySlug(slug, { token })
       .then((fetched) => {
@@ -79,6 +93,9 @@ function BlogPostView({ slug }) {
     return () => {
       cancelled = true
     }
+    // location.state is only read for the one-time hand-off above, not
+    // treated as a reactive dependency of this effect.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug, token])
 
   const engagement = usePostEngagement(post)
@@ -127,7 +144,7 @@ function BlogPostView({ slug }) {
   if (post.status === 'published') {
     const canonicalPath = getPostPath(post)
     if (location.pathname !== canonicalPath) {
-      return <Navigate to={canonicalPath} replace />
+      return <Navigate to={canonicalPath} replace state={{ preloadedPost: post }} />
     }
   }
 

@@ -33,8 +33,12 @@ function isConfigured() {
   return Boolean(process.env.RESEND_API_KEY && process.env.RESEND_FROM_EMAIL)
 }
 
+// Same placeholder as scripts/generate-feeds.js's fallback — a neutral
+// default rather than baking in today's specific deployment URL, which
+// would go stale (and misleadingly still look intentional) the moment a
+// custom domain is attached and SITE_URL is ever unset by accident.
 export function getSiteUrl() {
-  return (process.env.SITE_URL || 'https://learning-peach-two.vercel.app').replace(/\/$/, '')
+  return (process.env.SITE_URL || 'https://example.com').replace(/\/$/, '')
 }
 
 function chunk(array, size) {

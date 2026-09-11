@@ -37,6 +37,22 @@ import { sendPasswordResetEmail, getSiteUrl } from '../_lib/email.js'
 import { uploadImageFromDataUrl } from '../_lib/upload.js'
 import { withErrorHandling } from '../_lib/http.js'
 
+// Rejects anything but http(s) — an <input type="url"> only checks the URL
+// grammar, not the scheme, so `javascript:...` passes client-side
+// validation. These links get rendered as a real <a href> on a public
+// profile page for any visitor to click, so this is the actual security
+// boundary, not just a UX nicety.
+function isHttpUrl(value) {
+  try {
+    const { protocol } = new URL(value)
+    return protocol === 'http:' || protocol === 'https:'
+  } catch {
+    return false
+  }
+}
+
+const SOCIAL_LABELS = { github: 'GitHub', x: 'X', linkedin: 'LinkedIn' }
+
 async function handleSignup(req, res) {
   const body = req.body || {}
   const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : ''
@@ -212,6 +228,16 @@ async function handleUpdateProfile(req, res) {
   if (!email || !email.includes('@')) {
     res.status(400).json({ error: 'A valid email is required.' })
     return
+  }
+  if (website && !isHttpUrl(website)) {
+    res.status(400).json({ error: 'Website must be a valid http:// or https:// link.' })
+    return
+  }
+  for (const [platform, value] of Object.entries(socialLinks)) {
+    if (!isHttpUrl(value)) {
+      res.status(400).json({ error: `${SOCIAL_LABELS[platform]} must be a valid http:// or https:// link.` })
+      return
+    }
   }
 
   const existing = await getAccountByEmailForLogin(email)

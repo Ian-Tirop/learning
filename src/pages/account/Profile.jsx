@@ -14,6 +14,7 @@ import { useScrollEdges } from '../../hooks/useScrollEdges'
 import { formatDate } from '../../lib/formatDate'
 import { initials } from '../../lib/initials'
 import { getPostPath } from '../../lib/postUrl'
+import { isHttpUrl } from '../../lib/isHttpUrl'
 import { countries } from '../../data/countries'
 import '../write/Write.css'
 import './Account.css'
@@ -104,9 +105,18 @@ function ProfileDetailsForm({ account, updateProfile }) {
 
   const handleSubmit = async (event) => {
     event.preventDefault()
-    setSaving(true)
     setError('')
     setSuccess(false)
+
+    const links = { Website: website, GitHub: github, 'X / Twitter': x, LinkedIn: linkedin }
+    for (const [label, value] of Object.entries(links)) {
+      if (value && !isHttpUrl(value)) {
+        setError(`${label} must be a valid http:// or https:// link.`)
+        return
+      }
+    }
+
+    setSaving(true)
     try {
       await updateProfile({
         displayName,
