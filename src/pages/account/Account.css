@@ -183,6 +183,36 @@
   }
 }
 
+/* Fades the edge toward whichever side still has more tabs to scroll to —
+   applied/removed live via useScrollEdges, so it's never shown on a side
+   that's already fully scrolled (which would imply more when there isn't). */
+.profile-tabs.fade-right {
+  -webkit-mask-image: linear-gradient(to right, black calc(100% - 28px), transparent 100%);
+  mask-image: linear-gradient(to right, black calc(100% - 28px), transparent 100%);
+}
+
+.profile-tabs.fade-left {
+  -webkit-mask-image: linear-gradient(to left, black calc(100% - 28px), transparent 100%);
+  mask-image: linear-gradient(to left, black calc(100% - 28px), transparent 100%);
+}
+
+.profile-tabs.fade-left.fade-right {
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    black 28px,
+    black calc(100% - 28px),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    black 28px,
+    black calc(100% - 28px),
+    transparent 100%
+  );
+}
+
 .profile-tab {
   display: inline-flex;
   align-items: center;

@@ -10,6 +10,7 @@ import { useToast } from '../../context/ToastContext'
 import { useDocumentTitle } from '../../hooks/useDocumentTitle'
 import { useMetaRobots } from '../../hooks/useMetaRobots'
 import { useCountUp } from '../../hooks/useCountUp'
+import { useScrollEdges } from '../../hooks/useScrollEdges'
 import { formatDate } from '../../lib/formatDate'
 import { initials } from '../../lib/initials'
 import { getPostPath } from '../../lib/postUrl'
@@ -357,6 +358,8 @@ export function Profile() {
   const [activeTab, setActiveTab] = useState(
     TABS.some((tab) => tab.key === searchParams.get('tab')) ? searchParams.get('tab') : 'overview',
   )
+  const tabsRef = useRef(null)
+  const { atStart: tabsAtStart, atEnd: tabsAtEnd } = useScrollEdges(tabsRef)
 
   const handleUnfollow = async (writerId) => {
     const writer = following.find((w) => w.id === writerId)
@@ -459,7 +462,11 @@ export function Profile() {
         </button>
       </div>
 
-      <div className="profile-tabs" role="tablist">
+      <div
+        className={`profile-tabs${tabsAtStart ? '' : ' fade-left'}${tabsAtEnd ? '' : ' fade-right'}`}
+        ref={tabsRef}
+        role="tablist"
+      >
         {TABS.map((tab) => (
           <button
             key={tab.key}

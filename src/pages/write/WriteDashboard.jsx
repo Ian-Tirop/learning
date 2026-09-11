@@ -11,6 +11,7 @@ import { useMetaRobots } from '../../hooks/useMetaRobots'
 import { useAdmin } from '../../context/AdminContext'
 import { useToast } from '../../context/ToastContext'
 import { useCountUp } from '../../hooks/useCountUp'
+import { useScrollEdges } from '../../hooks/useScrollEdges'
 import { formatDate } from '../../lib/formatDate'
 import { getPostPath } from '../../lib/postUrl'
 import '../account/Account.css'
@@ -474,6 +475,8 @@ export function WriteDashboard() {
   const [reviewNote, setReviewNote] = useState('')
   const location = useLocation()
   const [activeTab, setActiveTab] = useState(location.state?.tab || 'overview')
+  const tabsRef = useRef(null)
+  const { atStart: tabsAtStart, atEnd: tabsAtEnd } = useScrollEdges(tabsRef)
   const [viewingAccountId, setViewingAccountId] = useState(null)
   const [viewingPostSlug, setViewingPostSlug] = useState(null)
   const [postsFilter, setPostsFilter] = useState('all')
@@ -579,7 +582,11 @@ export function WriteDashboard() {
         </button>
       </div>
 
-      <div className="profile-tabs" role="tablist">
+      <div
+        className={`profile-tabs${tabsAtStart ? '' : ' fade-left'}${tabsAtEnd ? '' : ' fade-right'}`}
+        ref={tabsRef}
+        role="tablist"
+      >
         {TABS.map((tab) => (
           <button
             key={tab.key}
