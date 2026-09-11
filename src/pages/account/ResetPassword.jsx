@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import { resetPassword } from '../../data/accountStore'
+import { PasswordField } from '../../components/PasswordField'
 import { useDocumentTitle } from '../../hooks/useDocumentTitle'
 import { useMetaRobots } from '../../hooks/useMetaRobots'
 import '../write/Write.css'
@@ -59,24 +60,20 @@ export function ResetPassword() {
         </p>
       ) : (
         <form className="login-form" onSubmit={handleSubmit}>
-          <label className="field">
-            <span>New password</span>
-            <input
-              type="password"
-              value={newPassword}
-              onChange={(event) => setNewPassword(event.target.value)}
-              placeholder="At least 8 characters"
-              autoFocus
-            />
-          </label>
-          <label className="field">
-            <span>Confirm new password</span>
-            <input
-              type="password"
-              value={confirmPassword}
-              onChange={(event) => setConfirmPassword(event.target.value)}
-            />
-          </label>
+          <PasswordField
+            label="New password"
+            value={newPassword}
+            onChange={(event) => setNewPassword(event.target.value)}
+            placeholder="At least 8 characters"
+            autoComplete="new-password"
+            autoFocus
+          />
+          <PasswordField
+            label="Confirm new password"
+            value={confirmPassword}
+            onChange={(event) => setConfirmPassword(event.target.value)}
+            autoComplete="new-password"
+          />
           {error && (
             <p className="comment-error" role="alert">
               {error}

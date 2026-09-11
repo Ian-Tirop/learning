@@ -72,6 +72,12 @@ export function Footer() {
                 <a href={link.href}>{link.label}</a>
               </li>
             ))}
+            <li>
+              <Link to="/terms">Terms of Service</Link>
+            </li>
+            <li>
+              <Link to="/privacy">Privacy Policy</Link>
+            </li>
           </ul>
         </nav>
       </div>

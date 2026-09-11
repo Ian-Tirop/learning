@@ -4,6 +4,7 @@ import { getMyPosts, getLikedPosts, getSavedPosts, getFollowing, toggleFollow } 
 import { getAllPosts } from '../../data/postStore'
 import { getRecommendedPosts } from '../../lib/postRanking'
 import { PostCover } from '../../components/PostCover'
+import { PasswordField } from '../../components/PasswordField'
 import { useAccount } from '../../context/AccountContext'
 import { useToast } from '../../context/ToastContext'
 import { useDocumentTitle } from '../../hooks/useDocumentTitle'
@@ -239,32 +240,26 @@ function ChangePasswordForm({ changePassword }) {
     <form className="write-form profile-form settings-card" onSubmit={handleSubmit}>
       <h3 className="settings-card-title">Password</h3>
       <p className="body-hint">Change your password.</p>
-      <label className="field">
-        <span>Current password</span>
-        <input
-          type="password"
-          value={currentPassword}
-          onChange={(event) => setCurrentPassword(event.target.value)}
-        />
-      </label>
+      <PasswordField
+        label="Current password"
+        value={currentPassword}
+        onChange={(event) => setCurrentPassword(event.target.value)}
+        autoComplete="current-password"
+      />
       <div className="field-row">
-        <label className="field">
-          <span>New password</span>
-          <input
-            type="password"
-            value={newPassword}
-            onChange={(event) => setNewPassword(event.target.value)}
-            placeholder="At least 8 characters"
-          />
-        </label>
-        <label className="field">
-          <span>Confirm new password</span>
-          <input
-            type="password"
-            value={confirmPassword}
-            onChange={(event) => setConfirmPassword(event.target.value)}
-          />
-        </label>
+        <PasswordField
+          label="New password"
+          value={newPassword}
+          onChange={(event) => setNewPassword(event.target.value)}
+          placeholder="At least 8 characters"
+          autoComplete="new-password"
+        />
+        <PasswordField
+          label="Confirm new password"
+          value={confirmPassword}
+          onChange={(event) => setConfirmPassword(event.target.value)}
+          autoComplete="new-password"
+        />
       </div>
       {error && (
         <p className="comment-error" role="alert">

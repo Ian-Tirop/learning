@@ -1,4 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg">
+  <symbol id="eye-icon" viewBox="0 0 20 20">
+    <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.4">
+      <path d="M1.5 10S4.8 4 10 4s8.5 6 8.5 6-3.3 6-8.5 6-8.5-6-8.5-6Z"/>
+      <circle cx="10" cy="10" r="2.4"/>
+    </g>
+  </symbol>
+  <symbol id="eye-off-icon" viewBox="0 0 20 20">
+    <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.4">
+      <path d="M1.5 10S4.8 4 10 4s8.5 6 8.5 6-3.3 6-8.5 6-8.5-6-8.5-6Z"/>
+      <circle cx="10" cy="10" r="2.4"/>
+      <path d="M3 3l14 14"/>
+    </g>
+  </symbol>
   <symbol id="close-icon" viewBox="0 0 20 20">
     <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 5l10 10M15 5 5 15"/>
   </symbol>

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { useAccount } from '../../context/AccountContext'
+import { PasswordField } from '../../components/PasswordField'
 import { useDocumentTitle } from '../../hooks/useDocumentTitle'
 import { useMetaRobots } from '../../hooks/useMetaRobots'
 import '../write/Write.css'
@@ -54,10 +55,12 @@ export function AccountLogin() {
             autoFocus
           />
         </label>
-        <label className="field">
-          <span>Password</span>
-          <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} />
-        </label>
+        <PasswordField
+          label="Password"
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+          autoComplete="current-password"
+        />
         {error && (
           <p className="comment-error" role="alert">
             {error}

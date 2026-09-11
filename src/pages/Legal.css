@@ -1,0 +1,40 @@
+.legal-page {
+  max-width: 720px;
+}
+
+.legal-updated {
+  color: var(--text);
+  font-size: 14px;
+  margin-top: -8px;
+}
+
+.legal-page section {
+  margin-top: 32px;
+}
+
+.legal-page h2 {
+  font-size: 20px;
+  margin-bottom: 10px;
+}
+
+.legal-page p,
+.legal-page li {
+  color: var(--text);
+  line-height: 1.7;
+}
+
+.legal-page ul {
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.legal-note {
+  margin-top: 40px;
+  padding: 16px 20px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--code-bg);
+  font-size: 14px;
+}

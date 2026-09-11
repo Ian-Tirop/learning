@@ -9,6 +9,8 @@ import { BlogPost } from './pages/BlogPost'
 import { Topics } from './pages/Topics'
 import { About } from './pages/About'
 import { Contact } from './pages/Contact'
+import { Terms } from './pages/Terms'
+import { Privacy } from './pages/Privacy'
 import { Submit } from './pages/Submit'
 import { Login } from './pages/admin/Login'
 import { Security } from './pages/admin/Security'
@@ -59,6 +61,8 @@ function App() {
                 <Route path="/topics" element={<Topics />} />
                 <Route path="/about" element={<About />} />
                 <Route path="/contact" element={<Contact />} />
+                <Route path="/terms" element={<Terms />} />
+                <Route path="/privacy" element={<Privacy />} />
                 <Route path="/submit" element={<Submit />} />
                 <Route path="/submit/edit/:slug" element={<Submit />} />
                 <Route path="/admin/login" element={<Login />} />

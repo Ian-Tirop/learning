@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { useAdmin } from '../../context/AdminContext'
+import { PasswordField } from '../../components/PasswordField'
 import { useDocumentTitle } from '../../hooks/useDocumentTitle'
 import { useMetaRobots } from '../../hooks/useMetaRobots'
 import '../write/Write.css'
@@ -97,15 +98,13 @@ export function Login() {
       </div>
 
       <form className="login-form" onSubmit={handlePasswordSubmit}>
-        <label className="field">
-          <span>Password</span>
-          <input
-            type="password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            autoFocus
-          />
-        </label>
+        <PasswordField
+          label="Password"
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+          autoComplete="current-password"
+          autoFocus
+        />
         {error && (
           <p className="comment-error" role="alert">
             {error}
