@@ -6,7 +6,7 @@ import { coverPresets, findMatchingPreset } from '../data/coverPresets'
 import { PostCover } from '../components/PostCover'
 import { parsePostBody, serializePostBody } from '../lib/postBody'
 import { estimateReadingTime } from '../lib/estimateReadingTime'
-import { getMySubmissions, addMySubmission } from '../lib/mySubmissions'
+import { getMySubmissions, addMySubmission, removeMySubmission } from '../lib/mySubmissions'
 import { useAccount } from '../context/AccountContext'
 import { useAdmin } from '../context/AdminContext'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
@@ -86,7 +86,12 @@ export function Submit() {
     setReadingTimeTouched(true)
   }, [existing])
 
-  const submissions = getMySubmissions()
+  const [submissions, setSubmissions] = useState(getMySubmissions)
+
+  const handleCloseSubmission = (slug) => {
+    removeMySubmission(slug)
+    setSubmissions(getMySubmissions())
+  }
 
   const handleBodyImageUpload = async (event) => {
     const file = event.target.files?.[0]
@@ -479,7 +484,20 @@ export function Submit() {
             {submissions.map((item) => (
               <li key={item.slug}>
                 <span>{item.title}</span>
-                <Link to={`/submit/edit/${item.slug}?token=${item.token}`}>Check / edit</Link>
+                <div className="my-submissions-actions">
+                  <Link to={`/submit/edit/${item.slug}?token=${item.token}`}>Check / edit</Link>
+                  <button
+                    type="button"
+                    className="my-submissions-close"
+                    onClick={() => handleCloseSubmission(item.slug)}
+                    aria-label={`Remove "${item.title}" from this list`}
+                    title="Remove from this list"
+                  >
+                    <svg className="icon" role="presentation" aria-hidden="true">
+                      <use href="/icons.svg#close-icon"></use>
+                    </svg>
+                  </button>
+                </div>
               </li>
             ))}
           </ul>
