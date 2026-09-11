@@ -144,9 +144,3 @@
   color: var(--success);
 }
 
-.reader-feedback-history {
-  margin-top: 14px;
-  font-size: 13px;
-  color: var(--text);
-  text-align: center;
-}

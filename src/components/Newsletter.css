@@ -64,13 +64,6 @@
   color: var(--success);
 }
 
-.newsletter-count {
-  width: 100%;
-  margin: 10px 0 0;
-  font-size: 13px;
-  color: var(--text);
-}
-
 @media (max-width: 640px) {
   .newsletter-card {
     padding: 32px 24px;
