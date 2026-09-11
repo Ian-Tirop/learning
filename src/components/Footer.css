@@ -18,7 +18,7 @@
   margin: 0 auto;
   padding: 60px 24px 36px;
   display: grid;
-  grid-template-columns: 1.5fr 0.8fr 0.8fr;
+  grid-template-columns: 1.3fr 0.7fr 0.7fr 0.7fr;
   gap: 32px;
 }
 
@@ -192,7 +192,7 @@
 
 @media (max-width: 860px) {
   .site-footer-main {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
   }
 
   .footer-brand {

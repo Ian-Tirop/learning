@@ -4,8 +4,8 @@ import { useAdmin } from '../context/AdminContext'
 import './Footer.css'
 
 // Trimmed to what's actually worth a second click from the footer — the
-// main nav already covers Home/Write, so this stays a short reference
-// list rather than a full sitemap, split into two even groups instead of
+// main nav already covers Home, so this stays a short reference list
+// rather than a full sitemap, split into short themed groups instead of
 // one long column. Legal links live in the bottom bar instead of their
 // own column; see Terms/Privacy below.
 const exploreLinks = [
@@ -17,7 +17,12 @@ const exploreLinks = [
 const connectLinks = [
   { to: '/about', label: 'About' },
   { to: '/contact', label: 'Contact' },
+  { to: '/submit', label: 'Write a post' },
+]
+
+const resourceLinks = [
   { href: '/rss.xml', label: 'RSS feed' },
+  { href: '/sitemap.xml', label: 'Sitemap' },
 ]
 
 export function Footer() {
@@ -66,6 +71,17 @@ export function Footer() {
             {connectLinks.map((link) => (
               <li key={link.to || link.href}>
                 {link.to ? <Link to={link.to}>{link.label}</Link> : <a href={link.href}>{link.label}</a>}
+              </li>
+            ))}
+          </ul>
+        </nav>
+
+        <nav className="footer-col" aria-label="Resources">
+          <p className="footer-col-title">Resources</p>
+          <ul>
+            {resourceLinks.map((link) => (
+              <li key={link.href}>
+                <a href={link.href}>{link.label}</a>
               </li>
             ))}
           </ul>
